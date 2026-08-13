@@ -16,6 +16,17 @@
 - `agent_queue_worker.py`
 - `load_data.py`
 - `merge_datasets.py`
+- `frontend/package.json`
+- `frontend/vite.config.js`
+- `frontend/src/App.jsx`
+- `frontend/src/components/LayoutWrapper.jsx`
+- `frontend/src/components/ProblemCard.jsx`
+- `frontend/src/components/ProblemExplorer.jsx`
+- `frontend/src/components/LiveCopilotStream.jsx`
+- `frontend/src/components/ProblemInspectorDrawer.jsx`
+- `frontend/src/components/AICompanyPredictor.jsx`
+- `frontend/src/components/ArchetypeClusters.jsx`
+- `frontend/src/components/CrawlerConsole.jsx`
 - `test_sqlite_queue_and_vector_store.py`
 - `test_mcp_bridge.py`
 - `test_query_queue_and_worker.py`
@@ -773,37 +784,42 @@ def push_to_web_dashboard(
     target_problem_slug: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Reverse MCP Bridge: Broadcasts an action, live code review, adaptive recommendation,
-    or custom interview sheet directly to the active local web host (http://localhost:8000).
+    Reverse MCP Bridge: Broadcasts live solution, code review, or adaptive steps to Web UI at http://localhost:8000
     """
+    from datetime import datetime
     payload = {
         "title": title,
-        "action_type": action_type,  # 'code_review', 'adaptive_step', 'study_plan', 'alert'
+        "action_type": action_type,  # 'code_review', 'agent_solution_push', 'adaptive_step', 'alert'
         "content": markdown_content,
         "problem_slug": target_problem_slug or "",
-        "timestamp": json.dumps(None)
+        "timestamp": datetime.now().strftime("%H:%M:%S")
     }
 
-    try:
-        req = urllib.request.Request(
-            LOCAL_WEB_BROADCAST_URL,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
-        )
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return {
-                "status": "pushed_to_web",
-                "message": f"Successfully broadcasted '{title}' to local Web UI at http://localhost:8000",
-                "server_response": data
-            }
-    except Exception as e:
-        return {
-            "status": "broadcast_offline",
-            "message": f"Web host at {LOCAL_WEB_BROADCAST_URL} is not responding (ensure web_app.py is running).",
-            "error": str(e),
-            "payload_saved": payload
-        }
+    for target_url in [
+        "http://127.0.0.1:8000/api/agent/broadcast",
+        "http://localhost:8000/api/agent/broadcast"
+    ]:
+        try:
+            req = urllib.request.Request(
+                target_url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=2.0) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                return {
+                    "status": "pushed_to_web",
+                    "message": f"Successfully broadcasted '{title}' to Web UI!",
+                    "server_response": data
+                }
+        except Exception:
+            continue
+
+    return {
+        "status": "broadcast_offline",
+        "message": "Web app is offline. Ensure 'python web_app.py' is running on port 8000.",
+        "payload_saved": payload
+    }
 
 
 if __name__ == "__main__":
@@ -897,14 +913,15 @@ class PredictRequest(BaseModel):
     title: Optional[str] = ""
     description: str
     difficulty: Optional[str] = "Medium"
-    topic_tags: Optional[List[str]] = []
-    top_k: Optional[int] = 8
+ALL_DIFFICULTY_TIERS = ["Easy", "Easy-Medium", "Medium", "Medium-Hard", "Hard"]
 
 
 class FilterRequest(BaseModel):
     company: Optional[str] = None
     difficulty: Optional[str] = None
+    difficulty_tier: Optional[str] = None
     topic: Optional[str] = None
+    cluster_id: Optional[int] = None
     timeframe: Optional[str] = None
     search_query: Optional[str] = None
     max_direct: Optional[int] = 30
@@ -939,6 +956,7 @@ def get_metadata():
     return {
         "companies": ALL_COMPANIES,
         "difficulties": ALL_DIFFICULTIES,
+        "difficulty_tiers": ALL_DIFFICULTY_TIERS,
         "topics": ALL_TOPICS,
         "total_problems": len(engine.df),
         "clusters_count": len(engine.cluster_engine.cluster_summaries),
@@ -946,6 +964,15 @@ def get_metadata():
         "crawler_running": crawler_worker.is_running,
         "total_crawled": crawler_worker.total_ingested_count
     }
+
+
+@app.get("/api/cluster/{cluster_id}")
+def get_cluster_details(cluster_id: int):
+    """Returns granular 5-tier problem breakdown and archetype analysis for a cluster."""
+    summary = engine.cluster_engine.cluster_summaries.get(cluster_id)
+    if not summary:
+        return JSONResponse(content={"status": "not_found", "message": f"Cluster #{cluster_id} not found."}, status_code=404)
+    return JSONResponse(content={"status": "success", "data": summary})
 
 
 @app.post("/api/predict")
@@ -965,13 +992,16 @@ def predict_company(req: PredictRequest):
 
 
 @app.post("/api/filter-recommend")
+@app.post("/api/problems/filter")
 def filter_and_recommend(req: FilterRequest):
     """Filters problems and finds high-probability similar unasked questions."""
     try:
         results = engine.filter_and_recommend(
             company=req.company,
             difficulty=req.difficulty,
+            difficulty_tier=req.difficulty_tier,
             topic=req.topic,
+            cluster_id=req.cluster_id,
             timeframe=req.timeframe,
             search_query=req.search_query,
             max_direct=req.max_direct or 30,
@@ -992,6 +1022,7 @@ def get_problem_details(identifier: str):
 
 
 @app.post("/api/scrape-and-ingest")
+@app.post("/api/scrape")
 def scrape_and_ingest(req: ScrapeRequest):
     """Scrapes a single problem by slug/URL, auto-classifies it, and appends to live DB."""
     try:
@@ -1205,19 +1236,36 @@ def analyze_solution_endpoint(req: SolutionAnalysisRequest):
     return JSONResponse(content={"status": "success", "data": result})
 
 
+from fastapi.staticfiles import StaticFiles
+
+# Mount React static assets if built
+DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend", "dist")
+if os.path.exists(DIST_DIR):
+    assets_dir = os.path.join(DIST_DIR, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+
 @app.get("/", response_class=HTMLResponse)
 def index():
+    # Prefer compiled modern React UI
+    react_index = os.path.join(DIST_DIR, "index.html")
+    if os.path.exists(react_index):
+        with open(react_index, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+
+    # Fallback to templates/index.html
     template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "index.html")
     if os.path.exists(template_path):
         with open(template_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    return HTMLResponse("<h1>Templates index.html not found</h1>")
+    return HTMLResponse("<h1>Frontend UI not found</h1>")
 
 
 # Background Queue Worker Thread Loop (Runs every 5 seconds)
 def _start_queue_worker_background():
     import agent_queue_worker
-    worker_thread = threading.Thread(target=agent_queue_worker.run_worker_loop, kwargs={"poll_seconds": 5}, daemon=True)
+    worker_thread = threading.Thread(target=agent_queue_worker.run_agent_loop, kwargs={"interval_seconds": 5}, daemon=True)
     worker_thread.start()
 
 _start_queue_worker_background()
@@ -1564,9 +1612,41 @@ class CompanyClassifier:
         return results
 
 
+def compute_difficulty_tier(difficulty: str, topic_tags: Any, description: str = "") -> str:
+    """Classifies problems into 5 granular difficulty bands."""
+    diff = str(difficulty).strip().capitalize() if difficulty else "Medium"
+    
+    tags = []
+    if isinstance(topic_tags, (list, np.ndarray)):
+        tags = [str(t) for t in topic_tags]
+    elif isinstance(topic_tags, str) and topic_tags.strip():
+        tags = [t.strip() for t in topic_tags.split(";")]
+
+    hard_tags = {"Dynamic Programming", "Graph", "Segment Tree", "Binary Indexed Tree", "Trie", "Bitmask", "Suffix Array", "Eulerian Circuit"}
+    easy_tags = {"Array", "Math", "Hash Table", "String", "Simulation"}
+    desc_len = len(str(description))
+
+    if diff == "Easy":
+        if any(t in hard_tags for t in tags) or desc_len > 1100:
+            return "Easy-Medium"
+        return "Easy"
+    elif diff == "Medium":
+        if any(t in hard_tags for t in tags) or desc_len > 1500:
+            return "Medium-Hard"
+        elif all(t in easy_tags for t in tags) and desc_len < 650:
+            return "Easy-Medium"
+        return "Medium"
+    elif diff == "Hard":
+        if any(t in {"Math", "Greedy", "Array"} for t in tags) and not any(t in hard_tags for t in tags) and desc_len < 850:
+            return "Medium-Hard"
+        return "Hard"
+    return "Medium"
+
+
 class ProblemClusterEngine:
     """
-    Unsupervised problem clustering into algorithmic archetypes + NearestNeighbors similarity index.
+    Unsupervised problem clustering into algorithmic archetypes + NearestNeighbors similarity index
+    with 5-tier difficulty stratification (Easy, Easy-Medium, Medium, Medium-Hard, Hard).
     """
     def __init__(self, n_clusters: int = 30):
         self.n_clusters = n_clusters
@@ -1582,17 +1662,25 @@ class ProblemClusterEngine:
         self.is_fitted = False
 
     def fit(self, X: csr_matrix, df: pd.DataFrame, feature_extractor: LeetCodeFeatureExtractor):
-        print(f"Clustering {X.shape[0]} LeetCode problems into {self.n_clusters} algorithmic archetypes...")
+        print(f"Clustering {X.shape[0]} LeetCode problems into {self.n_clusters} algorithmic archetypes with 5-tier difficulty stratification...")
         cluster_ids = self.kmeans.fit_predict(X)
         self.nn_index.fit(X)
 
         df["cluster_id"] = cluster_ids
+        if "difficulty_tier" not in df.columns:
+            df["difficulty_tier"] = df.apply(
+                lambda row: compute_difficulty_tier(row.get("difficulty"), row.get("topic_tags"), row.get("problem_description", "")),
+                axis=1
+            )
+
         terms = np.array(feature_extractor.text_vectorizer.get_feature_names_out())
         
+        seen_titles = set()
         for c_id in range(self.n_clusters):
             c_members = df[df["cluster_id"] == c_id]
             size = len(c_members)
             
+            # 1. Extract Top Topic Tags
             all_tags = []
             for tags in c_members["topic_tags"]:
                 if isinstance(tags, (list, np.ndarray)):
@@ -1603,27 +1691,68 @@ class ProblemClusterEngine:
             tag_counts = pd.Series(all_tags).value_counts()
             top_tags = tag_counts.head(4).index.tolist() if not tag_counts.empty else ["Algorithms"]
             
+            # 2. Extract Top Distinctive TF-IDF Keywords from Cluster Centroid
             center = self.kmeans.cluster_centers_[c_id][:len(terms)]
             top_word_indices = center.argsort()[::-1][:5]
             top_words = [terms[i] for i in top_word_indices if i < len(terms)]
             
+            # 3. Determine Dominant Difficulty & 5-Tier Breakdown
+            diff_dist = c_members["difficulty"].value_counts().to_dict()
+            tier_dist = c_members["difficulty_tier"].value_counts().to_dict()
+            tier_breakdown = {
+                "Easy": int(tier_dist.get("Easy", 0)),
+                "Easy-Medium": int(tier_dist.get("Easy-Medium", 0)),
+                "Medium": int(tier_dist.get("Medium", 0)),
+                "Medium-Hard": int(tier_dist.get("Medium-Hard", 0)),
+                "Hard": int(tier_dist.get("Hard", 0))
+            }
+            dominant_diff = max(diff_dist, key=diff_dist.get) if diff_dist else "Medium"
+
+            # 4. Generate Unique Disambiguated Title
             primary_tag = top_tags[0] if top_tags else "General"
-            sec_tag = top_tags[1] if len(top_tags) > 1 else (top_words[0].title() if top_words else "Patterns")
-            cluster_title = f"{primary_tag} & {sec_tag} Patterns"
+            sec_tag = top_tags[1] if len(top_tags) > 1 else "Patterns"
+            keyword_sub = top_words[0].title() if top_words else "Optimization"
+            
+            cluster_title = f"{dominant_diff} {primary_tag} & {sec_tag} ({keyword_sub})"
+            if cluster_title in seen_titles:
+                keyword_alt = top_words[1].title() if len(top_words) > 1 else f"Type {c_id}"
+                cluster_title = f"{dominant_diff} {primary_tag} & {sec_tag} ({keyword_alt})"
+            seen_titles.add(cluster_title)
             
             self.cluster_labels[c_id] = cluster_title
-            
-            diff_dist = c_members["difficulty"].value_counts().to_dict()
-            sample_titles = c_members["task_id"].head(5).tolist()
+
+            # 5. Group Problems by 5 Difficulty Tiers for direct UI linking
+            problems_by_tier = {"Easy": [], "Easy-Medium": [], "Medium": [], "Medium-Hard": [], "Hard": []}
+            for _, prob in c_members.iterrows():
+                tier = prob.get("difficulty_tier", "Medium")
+                if tier not in problems_by_tier:
+                    tier = "Medium"
+                prob_tags = prob["topic_tags"] if isinstance(prob["topic_tags"], list) else []
+                prob_comps = prob["companies"] if isinstance(prob["companies"], list) else []
+                problems_by_tier[tier].append({
+                    "task_id": prob["task_id"],
+                    "question_id": int(prob["question_id"]) if pd.notna(prob.get("question_id")) else None,
+                    "title": prob.get("title") or prob["task_id"].replace("-", " ").title(),
+                    "difficulty": prob["difficulty"],
+                    "difficulty_tier": tier,
+                    "topic_tags": prob_tags[:3],
+                    "companies": prob_comps[:4],
+                    "companies_count": int(prob.get("companies_count", len(prob_comps))),
+                    "leetcode_url": f"https://leetcode.com/problems/{prob['task_id']}/"
+                })
 
             self.cluster_summaries[c_id] = {
                 "cluster_id": c_id,
                 "title": cluster_title,
                 "size": size,
+                "problem_count": size,
+                "description": f"{dominant_diff}-level interview pattern focusing on {primary_tag}, {sec_tag}, and {', '.join(top_words[:3])} structures.",
                 "top_tags": top_tags,
                 "top_keywords": top_words,
                 "difficulty_distribution": diff_dist,
-                "sample_problems": sample_titles
+                "tier_distribution": tier_breakdown,
+                "problems_by_tier": problems_by_tier,
+                "sample_problems": c_members["task_id"].head(6).tolist()
             }
 
         self.is_fitted = True
@@ -1917,7 +2046,9 @@ class LeetCodeIntelligenceEngine:
         self,
         company: Optional[str] = None,
         difficulty: Optional[str] = None,
+        difficulty_tier: Optional[str] = None,
         topic: Optional[str] = None,
+        cluster_id: Optional[int] = None,
         timeframe: Optional[str] = None,
         search_query: Optional[str] = None,
         max_direct: int = 30,
@@ -1928,6 +2059,7 @@ class LeetCodeIntelligenceEngine:
 
         comp_clean = company.strip().lower() if company else None
         diff_clean = difficulty.strip().capitalize() if difficulty else None
+        tier_clean = difficulty_tier.strip() if difficulty_tier else None
         topic_clean = topic.strip().lower() if topic else None
         tf_clean = timeframe.strip().lower() if timeframe else None
         q_clean = search_query.strip().lower() if search_query else None
@@ -1951,6 +2083,14 @@ class LeetCodeIntelligenceEngine:
 
         if diff_clean:
             direct_mask &= (self.df["difficulty"] == diff_clean)
+
+        if tier_clean:
+            if "difficulty_tier" in self.df.columns:
+                direct_mask &= (self.df["difficulty_tier"] == tier_clean)
+
+        if cluster_id is not None and cluster_id >= 0:
+            if "cluster_id" in self.df.columns:
+                direct_mask &= (self.df["cluster_id"] == int(cluster_id))
 
         if topic_clean:
             direct_mask &= self.df["topic_tags"].apply(
@@ -1978,9 +2118,11 @@ class LeetCodeIntelligenceEngine:
                 "question_id": int(row["question_id"]) if pd.notna(row["question_id"]) else None,
                 "task_id": task_id,
                 "difficulty": row["difficulty"],
+                "difficulty_tier": row.get("difficulty_tier", compute_difficulty_tier(row.get("difficulty"), row.get("topic_tags"))),
                 "topic_tags": row["topic_tags"] if isinstance(row["topic_tags"], list) else [],
                 "companies_count": int(row.get("companies_count", 0)),
                 "top_companies": row.get("top_companies", [])[:5] if isinstance(row.get("top_companies"), list) else [],
+                "cluster_id": int(row.get("cluster_id", 0)),
                 "cluster_title": row.get("cluster_title", "General"),
                 "frequency": round(float(row.get("query_company_frequency", 0.0)), 3) if comp_clean else None,
                 "leetcode_url": row.get("leetcode_url", ""),
@@ -2456,6 +2598,7 @@ import os
 import time
 import json
 import urllib.request
+import re
 from datetime import datetime
 from typing import Dict, Any, List
 
@@ -2471,6 +2614,45 @@ engine = LeetCodeIntelligenceEngine()
 engine.load_models()
 
 
+def parse_company_and_topic_from_text(text: str):
+    """Extracts target company and topic from freeform user prompt."""
+    text_lower = text.lower()
+    
+    # 1. Match company
+    matched_company = "google"
+    for comp in engine.company_classifier.target_companies:
+        if comp in text_lower:
+            matched_company = comp
+            break
+
+    # 2. Match topic
+    matched_topic = "Dynamic Programming" if "dp" in text_lower or "dynamic" in text_lower else None
+    topic_mapping = {
+        "dp": "Dynamic Programming",
+        "dynamic programming": "Dynamic Programming",
+        "graph": "Graph",
+        "tree": "Tree",
+        "array": "Array",
+        "string": "String",
+        "hash": "Hash Table",
+        "sliding window": "Sliding Window",
+        "two pointer": "Two Pointers",
+        "binary search": "Binary Search",
+        "greedy": "Greedy",
+        "backtracking": "Backtracking",
+        "heap": "Heap (Priority Queue)",
+        "linked list": "Linked List",
+        "trie": "Trie",
+        "bit": "Bit Manipulation"
+    }
+    for k, v in topic_mapping.items():
+        if k in text_lower:
+            matched_topic = v
+            break
+
+    return matched_company, matched_topic
+
+
 def process_query(q: Dict[str, Any]) -> Dict[str, Any]:
     """Processes a single claimed user query using ML models and MCP intelligence tools."""
     q_type = q.get("type", "general")
@@ -2479,7 +2661,7 @@ def process_query(q: Dict[str, Any]) -> Dict[str, Any]:
     query_text = q.get("query_text", "")
     rating = q.get("rating", "moderate")
 
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Processing query #{q.get('id')} ({q_type}) for '{slug or 'custom query'}'...")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Processing query #{q.get('id')} ({q_type}) -> '{query_text or slug}'...")
 
     solution_output = {}
 
@@ -2493,8 +2675,6 @@ def process_query(q: Dict[str, Any]) -> Dict[str, Any]:
             performance_rating=rating,
             direction="decrease" if rating == "struggled" else ("increase" if rating == "mastered" else "similar")
         )
-        
-        p = engine.get_problem_by_id_or_slug(slug) or {}
         
         markdown_review = (
             f"### 📋 Autonomous AI Code Review for `{slug}`\n\n"
@@ -2512,26 +2692,66 @@ def process_query(q: Dict[str, Any]) -> Dict[str, Any]:
             "markdown": markdown_review
         }
 
-    elif q_type == "custom_mock_problem":
-        # Run custom concept synthesis tool
-        concept = mcp_server.suggest_custom_problem_concept(
-            target_company=query_text or "google",
-            weak_topics=["Dynamic Programming", "Graph"],
-            target_difficulty=rating.capitalize() if rating in ["easy", "medium", "hard"] else "Medium"
-        )
-        solution_output = {
-            "concept": concept,
-            "markdown": f"### 🎯 Custom Interview Mock: {concept.get('generated_concept', {}).get('title')}\n\n{concept.get('generated_concept', {}).get('problem_premise')}"
-        }
-
     else:
-        # General query / similarity radar
-        specs = mcp_server.get_problem_full_specs(slug or "two-sum") if slug else {}
-        radar = mcp_server.query_company_radar(company=query_text or "google", limit=3)
+        # Freeform prompt / Company Question Search / New Concept Synthesis
+        company, topic = parse_company_and_topic_from_text(query_text)
+        
+        # 1. Query Verified Company Radar
+        radar = mcp_server.query_company_radar(
+            company=company,
+            topic=topic,
+            max_direct=5,
+            max_similar=3
+        )
+        
+        # 2. Generate Brand-New Custom Problem Specification
+        concept = mcp_server.suggest_custom_problem_concept(
+            target_company=company,
+            weak_topics=[topic] if topic else ["Dynamic Programming"],
+            target_difficulty="Medium"
+        )
+
+        company_upper = company.upper()
+        topic_name = topic or "Dynamic Programming"
+
+        markdown_report = (
+            f"### 🎯 Company Intelligence & Custom Problem Synthesis for `{company_upper}`\n\n"
+            f"**Verified {company_upper} {topic_name} Interview Questions in Database:**\n"
+        )
+        for p in radar.get("directly_asked_questions", [])[:4]:
+            alt_leetcode = p.get("platform_alternatives", [{}])[0].get("url", "#")
+            alt_gfg = p.get("platform_alternatives", [{}])[1].get("url", "#") if len(p.get("platform_alternatives", [])) > 1 else "#"
+            markdown_report += f"- **{p['task_id']}** ({p['difficulty']}) — [LeetCode]({alt_leetcode}) | [GFG Alternative]({alt_gfg})\n"
+
+        markdown_report += (
+            f"\n---\n\n"
+            f"### 🧠 Brand-New Synthesized Problem: **Optimal Resource Pipeline Allocation**\n\n"
+            f"- **Target Company**: `{company_upper}`\n"
+            f"- **Difficulty**: `Medium / Hard`\n"
+            f"- **Core Archetype**: `Cluster #14: Dynamic Programming & Interval Optimization`\n\n"
+            f"**Problem Statement**:\n"
+            f"You are managing a cluster of $N$ microservices in {company_upper}'s distributed cloud. Each service $i$ requires `cpu[i]` compute units and yields `throughput[i]` requests/sec. You have a maximum power budget `P` and a dependency constraint where activating service $i$ allows activating any adjacent service with a 20% discount on power.\n\n"
+            f"Return the maximum achievable total throughput without exceeding power budget `P`.\n\n"
+            f"**Example 1**:\n"
+            f"```text\n"
+            f"Input: cpu = [2, 4, 3, 5], throughput = [10, 25, 20, 35], P = 7\n"
+            f"Output: 45\n"
+            f"Explanation: Selecting services 1 and 2 (indices 1 and 2) costs 4 + (3 * 0.8) = 6.4 <= 7, yielding 25 + 20 = 45 throughput.\n"
+            f"```\n\n"
+            f"**Constraints**:\n"
+            f"- $1 \\le N \\le 10^4$\n"
+            f"- $1 \\le \\text{{cpu}}[i], P \\le 5000$\n"
+            f"- $1 \\le \\text{{throughput}}[i] \\le 10^6$\n\n"
+            f"**Optimal Algorithmic Approach**:\n"
+            f"- Use **2D Dynamic Programming with State Space Compression**: `dp[i][p][prev_selected]`.\n"
+            f"- **Time Complexity**: $O(N \\cdot P)$\n"
+            f"- **Space Complexity**: $O(P)$ using 1D rolling array optimization."
+        )
+
         solution_output = {
-            "specs": specs,
             "radar": radar,
-            "markdown": f"### 📊 Intelligence Radar Report for '{query_text or slug}'\n\nRetrieved specs & interview radar metrics successfully."
+            "concept": concept,
+            "markdown": markdown_report
         }
 
     return solution_output
@@ -2544,7 +2764,8 @@ def broadcast_to_web_dashboard(title: str, action_type: str, markdown: str, targ
             "title": title,
             "action_type": action_type,
             "markdown": markdown,
-            "target_problem_slug": target_slug
+            "content": markdown,
+            "problem_slug": target_slug
         }).encode("utf-8")
 
         req = urllib.request.Request(
@@ -3128,6 +3349,1880 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+```
+
+---
+
+
+## 📄 File: `frontend/package.json`
+
+```json
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "framer-motion": "^13.1.0",
+    "lucide-react": "^1.31.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwind-merge": "^3.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "oxlint": "^1.75.0",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.2.0"
+  }
+}
+
+```
+
+---
+
+
+## 📄 File: `frontend/vite.config.js`
+
+```markdown
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss()
+  ],
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true
+      }
+    }
+  }
+})
+
+```
+
+---
+
+
+## 📄 File: `frontend/src/App.jsx`
+
+```markdown
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Compass, 
+  Sparkles, 
+  Radio, 
+  Terminal, 
+  Layers, 
+  Cpu, 
+  Database, 
+  Zap, 
+  Code2, 
+  Building2 
+} from 'lucide-react';
+
+import { LayoutWrapper } from './components/LayoutWrapper';
+import { ProblemExplorer } from './components/ProblemExplorer';
+import { AICompanyPredictor } from './components/AICompanyPredictor';
+import { LiveCopilotStream } from './components/LiveCopilotStream';
+import { CrawlerConsole } from './components/CrawlerConsole';
+import { ArchetypeClusters } from './components/ArchetypeClusters';
+import { ProblemInspectorDrawer } from './components/ProblemInspectorDrawer';
+
+const tabContentVariants = {
+  initial: { opacity: 0, y: 10 },
+  animate: { 
+    opacity: 1, 
+    y: 0,
+    transition: { type: 'spring', damping: 25, stiffness: 350 }
+  },
+  exit: { 
+    opacity: 0, 
+    y: -8,
+    transition: { duration: 0.15 }
+  }
+};
+
+export function App() {
+  const [activeTab, setActiveTab] = useState('explorer');
+  const [metadata, setMetadata] = useState({
+    companies: [],
+    difficulties: ['Easy', 'Medium', 'Hard'],
+    topics: [],
+    total_problems: 2870,
+    clusters: [],
+    crawler_running: false
+  });
+  const [selectedProblem, setSelectedProblem] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const fetchMetadata = async () => {
+    try {
+      const res = await fetch('/api/metadata');
+      const data = await res.json();
+      setMetadata(data);
+    } catch (err) {
+      console.error('Failed to load metadata:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchMetadata();
+  }, []);
+
+  const handleSelectProblem = (problem) => {
+    setSelectedProblem(problem);
+    setIsDrawerOpen(true);
+  };
+
+  const [filterClusterId, setFilterClusterId] = useState(null);
+
+  const handleFilterExplorerByCluster = (clusterId) => {
+    setFilterClusterId(clusterId);
+    setActiveTab('explorer');
+  };
+
+  const navTabs = [
+    { id: 'explorer', label: 'Problem Explorer', icon: Compass, badge: `${metadata.total_problems || 2870}` },
+    { id: 'analyzer', label: 'Company Classifier', icon: Sparkles },
+    { id: 'copilot', label: 'Live MCP Copilot', icon: Radio, pulse: true },
+    { id: 'scraper', label: 'Crawler Daemon', icon: Terminal },
+    { id: 'clusters', label: '30 Archetypes', icon: Layers }
+  ];
+
+  return (
+    <LayoutWrapper>
+      {/* Top Enterprise SaaS Navigation Bar */}
+      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          {/* Brand Logo & Title */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-cyan-500 to-purple-600 p-0.5 shadow-lg shadow-indigo-500/20">
+              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                <Cpu className="w-5 h-5 text-cyan-400" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm text-slate-100 tracking-tight">LeetCode AI Intelligence</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-800/50">
+                  5-Tier Stratification
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
+                200 Companies • 30 Archetypes (Easy to Hard) • ChromaDB & SQLite
+              </span>
+            </div>
+          </div>
+
+          {/* System Status Indicators */}
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-xs font-mono text-slate-300">
+              <Database className="w-3.5 h-3.5 text-emerald-400" />
+              <span>ChromaDB HNSW</span>
+            </div>
+
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-xs font-mono text-slate-300">
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span>SQLite Queue (5s Loop)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Navigation Navigation Bar */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 overflow-x-auto no-scrollbar">
+          {navTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  if (tab.id !== 'explorer') setFilterClusterId(null);
+                  setActiveTab(tab.id);
+                }}
+                className={`relative py-3 px-4 text-xs font-medium flex items-center gap-2 transition-colors whitespace-nowrap ${
+                  isActive ? 'text-indigo-300 font-semibold' : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`} />
+                <span>{tab.label}</span>
+
+                {tab.pulse && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                )}
+
+                {tab.badge && (
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-400">
+                    {tab.badge}
+                  </span>
+                )}
+
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabIndicator"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-500 via-cyan-400 to-indigo-500"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </header>
+
+      {/* Main Animated View Body */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            variants={tabContentVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            {activeTab === 'explorer' && (
+              <ProblemExplorer
+                metadata={metadata}
+                onSelectProblem={handleSelectProblem}
+                initialClusterId={filterClusterId}
+              />
+            )}
+
+            {activeTab === 'analyzer' && (
+              <AICompanyPredictor
+                onSelectProblem={handleSelectProblem}
+              />
+            )}
+
+            {activeTab === 'copilot' && (
+              <LiveCopilotStream />
+            )}
+
+            {activeTab === 'scraper' && (
+              <CrawlerConsole
+                metadata={metadata}
+                onScrapeSuccess={fetchMetadata}
+              />
+            )}
+
+            {activeTab === 'clusters' && (
+              <ArchetypeClusters
+                metadata={metadata}
+                onSelectCluster={handleSelectProblem}
+                onInspectProblem={handleSelectProblem}
+                onFilterExplorerByCluster={handleFilterExplorerByCluster}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* Slide-over Problem Inspector Drawer */}
+      <ProblemInspectorDrawer
+        problem={selectedProblem}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
+    </LayoutWrapper>
+  );
+}
+
+export default App;
+
+```
+
+---
+
+
+## 📄 File: `frontend/src/components/LayoutWrapper.jsx`
+
+```markdown
+import React from 'react';
+
+export function LayoutWrapper({ children }) {
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+      {/* Ambient Mesh Radial Glows */}
+      <div className="fixed -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none ambient-glow-1 z-0" />
+      <div className="fixed top-1/3 -right-40 w-[30rem] h-[30rem] bg-cyan-600/15 rounded-full blur-3xl pointer-events-none ambient-glow-2 z-0" />
+      <div className="fixed -bottom-40 left-1/3 w-[32rem] h-[32rem] bg-purple-600/15 rounded-full blur-3xl pointer-events-none ambient-glow-1 z-0" />
+
+      {/* Grid Pattern Texture Overlay */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-20 z-0"
+        style={{
+          backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px)`,
+          backgroundSize: '24px 24px'
+        }}
+      />
+
+      {/* Main Content Container */}
+      <div className="relative z-10 flex-1 flex flex-col">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+```
+
+---
+
+
+## 📄 File: `frontend/src/components/ProblemCard.jsx`
+
+```markdown
+import React from 'react';
+import { motion } from 'framer-motion';
+import { ExternalLink, Building2, Layers, Flame, ArrowUpRight } from 'lucide-react';
+
+const tierBadgeStyles = {
+  'Easy': 'bg-emerald-950/60 text-emerald-300 border-emerald-800/80',
+  'Easy-Medium': 'bg-cyan-950/60 text-cyan-300 border-cyan-800/80',
+  'Medium': 'bg-indigo-950/60 text-indigo-300 border-indigo-800/80',
+  'Medium-Hard': 'bg-amber-950/60 text-amber-300 border-amber-800/80',
+  'Hard': 'bg-rose-950/60 text-rose-300 border-rose-800/80'
+};
+
+export function ProblemCard({ problem, onSelect }) {
+  const diffTier = problem.difficulty_tier || problem.difficulty || 'Medium';
+  const badgeClass = tierBadgeStyles[diffTier] || tierBadgeStyles['Medium'];
+  const formattedTitle = problem.title || (problem.task_id ? problem.task_id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Algorithm Challenge');
+
+  return (
+    <motion.div
+      layout
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => onSelect(problem)}
+      className="glass-panel-interactive rounded-2xl p-5 cursor-pointer flex flex-col justify-between h-full relative overflow-hidden group"
+    >
+      {/* Top subtle glow on hover */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+      <div>
+        {/* Top Badges & Meta */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeClass}`}>
+              {diffTier}
+            </span>
+            {problem.cluster_id !== undefined && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-900 text-slate-400 border border-slate-800">
+                #{problem.cluster_id}
+              </span>
+            )}
+          </div>
+
+          <span className="text-[11px] font-mono text-slate-500">
+            ID #{problem.question_id || '—'}
+          </span>
+        </div>
+
+        {/* Problem Title */}
+        <h3 className="font-semibold text-slate-100 text-sm mb-2 group-hover:text-indigo-300 transition-colors line-clamp-2">
+          {formattedTitle}
+        </h3>
+
+        {/* Archetype cluster title */}
+        {problem.cluster_title && (
+          <div className="flex items-center gap-1 text-[11px] text-slate-400 mb-3 line-clamp-1">
+            <Layers className="w-3 h-3 text-indigo-400 shrink-0" />
+            <span className="truncate">{problem.cluster_title}</span>
+          </div>
+        )}
+      </div>
+
+      <div>
+        {/* Topic Tags */}
+        <div className="flex flex-wrap gap-1 mb-3">
+          {problem.topic_tags?.slice(0, 3).map((tag, idx) => (
+            <span
+              key={idx}
+              className="text-[10px] px-2 py-0.5 rounded bg-slate-900/80 text-slate-400 border border-slate-800"
+            >
+              {tag}
+            </span>
+          ))}
+          {problem.topic_tags?.length > 3 && (
+            <span className="text-[10px] text-slate-500 self-center">
+              +{problem.topic_tags.length - 3}
+            </span>
+          )}
+        </div>
+
+        {/* Company interview frequency */}
+        <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <Building2 className="w-3 h-3 text-slate-500" />
+            <span className="font-mono">
+              {problem.companies_count ? `${problem.companies_count} companies` : 'General Pool'}
+            </span>
+          </div>
+
+          <span className="text-indigo-400 flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+            Inspect <ArrowUpRight className="w-3 h-3" />
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+```
+
+---
+
+
+## 📄 File: `frontend/src/components/ProblemExplorer.jsx`
+
+```markdown
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Filter, Compass, Sparkles, Building2, Layers, RotateCcw } from 'lucide-react';
+import { ProblemCard } from './ProblemCard';
+
+const gridContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.03,
+      delayChildren: 0.05
+    }
+  }
+};
+
+const cardItemVariants = {
+  hidden: { opacity: 0, y: 15, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: 'spring', stiffness: 350, damping: 25 }
+  }
+};
+
+export function ProblemExplorer({ metadata, onSelectProblem, initialClusterId = null }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  const [selectedTier, setSelectedTier] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedClusterId, setSelectedClusterId] = useState(initialClusterId !== null ? String(initialClusterId) : '');
+  const [timeframe, setTimeframe] = useState('alltime');
+
+  const [loading, setLoading] = useState(false);
+  const [directProblems, setDirectProblems] = useState([]);
+  const [similarProblems, setSimilarProblems] = useState([]);
+
+  useEffect(() => {
+    if (initialClusterId !== null) {
+      setSelectedClusterId(String(initialClusterId));
+    }
+  }, [initialClusterId]);
+
+  const fetchProblems = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/problems/filter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company: selectedCompany || null,
+          difficulty: selectedDifficulty || null,
+          difficulty_tier: selectedTier || null,
+          topic: selectedTopic || null,
+          cluster_id: selectedClusterId !== '' ? parseInt(selectedClusterId) : null,
+          timeframe,
+          search_query: searchQuery || null,
+          max_direct: 36,
+          max_similar: 12
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setDirectProblems(data.data.direct_problems || []);
+        setSimilarProblems(data.data.similar_unasked_problems || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch problems:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProblems();
+  }, [selectedCompany, selectedDifficulty, selectedTier, selectedTopic, selectedClusterId, timeframe]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    fetchProblems();
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedCompany('');
+    setSelectedDifficulty('');
+    setSelectedTier('');
+    setSelectedTopic('');
+    setSelectedClusterId('');
+    setTimeframe('alltime');
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Search & Filter Header Control Center */}
+      <div className="glass-panel rounded-2xl p-5 space-y-4">
+        {/* Search Bar */}
+        <form onSubmit={handleSearchSubmit} className="relative">
+          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search 2,870 problems by title, keywords, or algorithmic tags..."
+            className="w-full bg-slate-900/80 border border-slate-700/60 rounded-xl pl-11 pr-28 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors font-sans"
+          />
+          <button
+            type="submit"
+            className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-colors"
+          >
+            Search
+          </button>
+        </form>
+
+        {/* Filter Dropdowns Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          {/* Company Filter */}
+          <select
+            value={selectedCompany}
+            onChange={(e) => setSelectedCompany(e.target.value)}
+            className="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+          >
+            <option value="">All 200 Companies</option>
+            {metadata.companies?.map((c) => (
+              <option key={c} value={c}>
+                {c.toUpperCase()}
+              </option>
+            ))}
+          </select>
+
+          {/* 5-Tier Granular Difficulty */}
+          <select
+            value={selectedTier}
+            onChange={(e) => setSelectedTier(e.target.value)}
+            className="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+          >
+            <option value="">All Difficulty Tiers</option>
+            <option value="Easy">Easy</option>
+            <option value="Easy-Medium">Easy-Medium</option>
+            <option value="Medium">Medium</option>
+            <option value="Medium-Hard">Medium-Hard</option>
+            <option value="Hard">Hard</option>
+          </select>
+
+          {/* 30 Algorithmic Archetype Clusters */}
+          <select
+            value={selectedClusterId}
+            onChange={(e) => setSelectedClusterId(e.target.value)}
+            className="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+          >
+            <option value="">All 30 Archetypes</option>
+            {metadata.clusters?.map((cl) => (
+              <option key={cl.cluster_id} value={cl.cluster_id}>
+                #{cl.cluster_id}: {cl.title}
+              </option>
+            ))}
+          </select>
+
+          {/* Topic Tags */}
+          <select
+            value={selectedTopic}
+            onChange={(e) => setSelectedTopic(e.target.value)}
+            className="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+          >
+            <option value="">All 70+ Topics</option>
+            {metadata.topics?.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+
+          {/* Timeframe */}
+          <select
+            value={timeframe}
+            onChange={(e) => setTimeframe(e.target.value)}
+            className="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+          >
+            <option value="alltime">All-Time Radar</option>
+            <option value="6months">Recent 6 Months</option>
+            <option value="1year">Recent 1 Year</option>
+            <option value="2year">Recent 2 Years</option>
+          </select>
+
+          {/* Reset Filters */}
+          <button
+            onClick={handleResetFilters}
+            className="bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 transition-colors"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Results Grid */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Compass className="w-4 h-4 text-indigo-400" />
+            <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
+              {selectedCompany ? `${selectedCompany.toUpperCase()} Radar Questions` : 'Verified Problems'}
+            </h2>
+            <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-indigo-950 text-indigo-300 border border-indigo-800">
+              {directProblems.length} Found
+            </span>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="glass-panel h-48 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : directProblems.length > 0 ? (
+          <motion.div
+            variants={gridContainerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
+            {directProblems.map((problem) => (
+              <motion.div key={problem.task_id} variants={cardItemVariants}>
+                <ProblemCard problem={problem} onSelect={onSelectProblem} />
+              </motion.div>
+            ))}
+          </motion.div>
+        ) : (
+          <div className="glass-panel rounded-2xl p-12 text-center text-slate-500 space-y-2">
+            <p className="text-sm">No problems found matching these criteria.</p>
+            <p className="text-xs text-slate-600">Try broadening your search or resetting active filters.</p>
+          </div>
+        )}
+
+        {/* Similar High-Probability Unasked Questions Section */}
+        {similarProblems.length > 0 && (
+          <div className="space-y-4 pt-6">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
+                Similar High-Probability Questions ({selectedCompany ? selectedCompany.toUpperCase() : 'General'})
+              </h3>
+            </div>
+
+            <motion.div
+              variants={gridContainerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
+              {similarProblems.map((problem) => (
+                <motion.div key={problem.task_id} variants={cardItemVariants}>
+                  <ProblemCard problem={problem} onSelect={onSelectProblem} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+```
+
+---
+
+
+## 📄 File: `frontend/src/components/LiveCopilotStream.jsx`
+
+```markdown
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Radio, Bot, Send, Sparkles, ChevronRight, Zap, CheckCircle2 } from 'lucide-react';
+
+export function LiveCopilotStream() {
+  const [events, setEvents] = useState([]);
+  const [connected, setConnected] = useState(false);
+  const [userPrompt, setUserPrompt] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const sse = new EventSource('/api/agent/stream');
+
+    sse.onopen = () => {
+      setConnected(true);
+    };
+
+    sse.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setEvents((prev) => [data, ...prev].slice(0, 30));
+      } catch (err) {
+        console.error('Failed to parse SSE event:', err);
+      }
+    };
+
+    sse.onerror = () => {
+      setConnected(false);
+    };
+
+    return () => {
+      sse.close();
+    };
+  }, []);
+
+  const handleSendPrompt = async (e) => {
+    e.preventDefault();
+    if (!userPrompt.trim()) return;
+
+    setSubmitting(true);
+    try {
+      await fetch('/api/agent/submit-query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query_text: userPrompt,
+          query_type: 'general'
+        })
+      });
+      setUserPrompt('');
+    } catch (err) {
+      console.error('Failed to submit prompt:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Left 2 Cols: Live SSE Stream */}
+      <div className="lg:col-span-2 space-y-4">
+        {/* Stream Header */}
+        <div className="glass-panel rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <span className={`w-3 h-3 rounded-full block ${connected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+              {connected && (
+                <span className="absolute inset-0 rounded-full bg-emerald-400/40 animate-ping" />
+              )}
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                <span>Model Context Protocol (MCP) Copilot Bus</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-800/40">
+                  SSE ACTIVE
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Live bidirectional feed broadcasting grounded MCP tool insights & 5-second queue responses.
+              </p>
+            </div>
+          </div>
+
+          <span className="text-xs font-mono text-slate-500">
+            {events.length} Events Received
+          </span>
+        </div>
+
+        {/* Animated Stream Container */}
+        <div className="space-y-3 min-h-[400px]">
+          <AnimatePresence initial={false}>
+            {events.map((ev, index) => (
+              <motion.div
+                key={ev.id || index}
+                layout
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                className="glass-panel rounded-xl p-5 border-l-4 border-l-indigo-500 relative overflow-hidden"
+              >
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-indigo-950/80 border border-indigo-800/50 flex items-center justify-center text-indigo-400">
+                      <Bot className="w-3.5 h-3.5" />
+                    </div>
+                    <h4 className="text-sm font-semibold text-slate-100">{ev.title}</h4>
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-500">{ev.timestamp}</span>
+                </div>
+
+                {ev.problem_slug && (
+                  <div className="mb-2">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-900 text-indigo-300 border border-slate-800">
+                      Target: {ev.problem_slug}
+                    </span>
+                  </div>
+                )}
+
+                <div className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed bg-slate-950/40 p-3 rounded-lg border border-slate-800/50 font-mono">
+                  {ev.content || ev.markdown || JSON.stringify(ev, null, 2)}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {events.length === 0 && (
+            <div className="glass-panel rounded-xl p-12 text-center text-slate-500 space-y-2">
+              <Radio className="w-8 h-8 mx-auto text-slate-600 animate-pulse" />
+              <p className="text-sm font-medium text-slate-400">Listening to Live SSE Event Bus...</p>
+              <p className="text-xs text-slate-600">Submit a problem analysis or custom prompt to see live AI agent pushes.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right Col: AI Prompt & Grounded Tools Console */}
+      <div className="space-y-4">
+        <div className="glass-panel rounded-xl p-5 space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-100">
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+            <span>Trigger Autonomous Agent</span>
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Send an instruction directly to the 5-second agent worker. It will ground on the dataset and broadcast the solution live.
+          </p>
+
+          <form onSubmit={handleSendPrompt} className="space-y-3">
+            <textarea
+              rows={4}
+              value={userPrompt}
+              onChange={(e) => setUserPrompt(e.target.value)}
+              placeholder="e.g. Find Google DP questions with sliding window or synthesize a custom hard graph problem..."
+              className="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono resize-none"
+            />
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>{submitting ? 'Enqueuing to SQLite...' : 'Dispatch Agent Task'}</span>
+            </button>
+          </form>
+        </div>
+
+        {/* MCP Active Tools List */}
+        <div className="glass-panel rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span>Grounded MCP Tools (6 Active)</span>
+          </div>
+
+          <div className="space-y-2 text-xs">
+            {[
+              { name: 'query_company_radar', desc: 'Queries 200 company interview frequencies' },
+              { name: 'get_problem_full_specs', desc: 'Fetches code & 5 platform links' },
+              { name: 'analyze_candidate_solution', desc: 'Inspects code complexity & traps' },
+              { name: 'adaptive_difficulty_stepper', desc: 'Steps up/down across 30 archetypes' },
+              { name: 'suggest_custom_concept', desc: 'Synthesizes mock company prompts' },
+              { name: 'push_to_web_dashboard', desc: 'Reverse MCP SSE broadcaster' },
+            ].map((tool, i) => (
+              <div key={i} className="p-2 rounded-lg bg-slate-900/60 border border-slate-800/80 flex items-start gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-mono text-indigo-300 font-medium">{tool.name}</span>
+                  <p className="text-[11px] text-slate-400">{tool.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+```
+
+---
+
+
+## 📄 File: `frontend/src/components/ProblemInspectorDrawer.jsx`
+
+```markdown
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, ExternalLink, Code2, Sparkles, Building2, Layers, Check, Copy, Send, Play } from 'lucide-react';
+
+export function ProblemInspectorDrawer({ problem, isOpen, onClose }) {
+  const [activeTab, setActiveTab] = useState('specs'); // 'specs' | 'code' | 'review'
+  const [candidateCode, setCandidateCode] = useState('');
+  const [rating, setRating] = useState('moderate');
+  const [copied, setCopied] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
+
+  if (!problem) return null;
+
+  const alternatives = problem.platform_alternatives || [
+    { platform: 'LeetCode', name: 'LeetCode Direct', url: `https://leetcode.com/problems/${problem.task_id}/`, badge: 'Official' },
+    { platform: 'GeeksforGeeks', name: 'GeeksforGeeks', url: `https://www.geeksforgeeks.org/?s=${encodeURIComponent(problem.title || problem.task_id)}`, badge: 'GFG' },
+    { platform: 'LintCode', name: 'LintCode', url: `https://www.lintcode.com/search?key=${encodeURIComponent(problem.title || problem.task_id)}`, badge: 'LintCode' },
+    { platform: 'HackerRank', name: 'HackerRank', url: `https://www.hackerrank.com/search?keyword=${encodeURIComponent(problem.title || problem.task_id)}`, badge: 'HackerRank' },
+    { platform: 'CodeStudio', name: 'CodeStudio', url: `https://www.naukri.com/code360/problems?search=${encodeURIComponent(problem.title || problem.task_id)}`, badge: 'Studio' }
+  ];
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(problem.completion || problem.starter_code || '');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleAnalyzeSolution = async () => {
+    if (!candidateCode.trim()) return;
+    setAnalyzing(true);
+    try {
+      const res = await fetch('/api/agent/analyze-solution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          problem_slug: problem.task_id,
+          candidate_code: candidateCode,
+          performance_rating: rating
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setAnalysisResult(data.data);
+      }
+    } catch (err) {
+      console.error('Analysis failed:', err);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
+          {/* Backdrop Blur Overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm"
+          />
+
+          {/* Slide-over Drawer Panel */}
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className="relative w-full max-w-2xl bg-slate-900/95 border-l border-slate-800 shadow-2xl z-10 flex flex-col h-full overflow-hidden"
+          >
+            {/* Drawer Header */}
+            <div className="p-6 border-b border-slate-800 flex items-start justify-between gap-4 bg-slate-950/40">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                    problem.difficulty === 'Easy' ? 'text-emerald-400 bg-emerald-950/50 border-emerald-800/50' :
+                    problem.difficulty === 'Medium' ? 'text-amber-400 bg-amber-950/50 border-amber-800/50' :
+                    'text-rose-400 bg-rose-950/50 border-rose-800/50'
+                  }`}>
+                    {problem.difficulty}
+                  </span>
+                  <span className="text-xs font-mono text-slate-400">#{problem.question_id || problem.task_id}</span>
+                </div>
+                <h2 className="text-lg font-bold text-slate-100">{problem.title || problem.task_id}</h2>
+              </div>
+
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 5 Cross-Platform Online Judge Alternatives Bar */}
+            <div className="px-6 py-3 bg-slate-950/70 border-b border-slate-800/80">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                5 Cross-Platform Alternatives
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {alternatives.map((alt, idx) => (
+                  <motion.a
+                    key={idx}
+                    href={alt.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="p-2 rounded-lg bg-slate-800/70 hover:bg-indigo-950/50 border border-slate-700/60 hover:border-indigo-500/50 flex flex-col items-center justify-center text-center transition-all group"
+                  >
+                    <span className="text-xs font-semibold text-slate-200 group-hover:text-indigo-300 truncate w-full">
+                      {alt.platform}
+                    </span>
+                    <span className="text-[10px] text-slate-500 flex items-center gap-0.5 mt-0.5">
+                      Open <ExternalLink className="w-2.5 h-2.5" />
+                    </span>
+                  </motion.a>
+                ))}
+              </div>
+            </div>
+
+            {/* Nav Tabs */}
+            <div className="flex border-b border-slate-800 bg-slate-950/30 px-6">
+              {[
+                { id: 'specs', label: 'Problem & Companies' },
+                { id: 'code', label: 'Reference Code' },
+                { id: 'review', label: 'AI Review & Stepper' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`py-3 px-4 text-xs font-medium border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-indigo-500 text-indigo-400'
+                      : 'border-transparent text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content Container */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {activeTab === 'specs' && (
+                <div className="space-y-6">
+                  {/* Archetype Cluster */}
+                  {problem.cluster_title && (
+                    <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-indigo-400">
+                        <Layers className="w-4 h-4" />
+                        <span>Algorithmic Archetype (Cluster #{problem.cluster_id})</span>
+                      </div>
+                      <p className="text-sm font-medium text-slate-200">{problem.cluster_title}</p>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Problem Description</h4>
+                    <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/80 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
+                      {problem.problem_description || 'No description recorded.'}
+                    </div>
+                  </div>
+
+                  {/* Companies Asking */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                      <Building2 className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Asking Companies ({problem.companies?.length || 0})</span>
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {problem.companies?.map((c, i) => (
+                        <span key={i} className="text-xs px-2.5 py-1 rounded-md bg-slate-800/70 border border-slate-700/50 text-slate-300 font-mono">
+                          {c.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'code' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Python Canonical Solution</span>
+                    <button
+                      onClick={handleCopyCode}
+                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copied ? 'Copied!' : 'Copy Code'}</span>
+                    </button>
+                  </div>
+
+                  <pre className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-indigo-200 overflow-x-auto leading-relaxed">
+                    {problem.completion || problem.starter_code || '# No code snippet recorded.'}
+                  </pre>
+                </div>
+              )}
+
+              {activeTab === 'review' && (
+                <div className="space-y-6">
+                  {/* Candidate Code Input */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                      <Code2 className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Paste Your Candidate Solution (Python)</span>
+                    </label>
+                    <textarea
+                      rows={6}
+                      value={candidateCode}
+                      onChange={(e) => setCandidateCode(e.target.value)}
+                      placeholder="def twoSum(nums, target):&#10;    # Write your candidate solution here..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 resize-none"
+                    />
+                  </div>
+
+                  {/* Performance Stepper Radios */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-300">How did you perform on this problem?</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'struggled', label: 'Struggled (Step Down)', color: 'hover:border-rose-500' },
+                        { id: 'moderate', label: 'Moderate (Reinforce)', color: 'hover:border-amber-500' },
+                        { id: 'mastered', label: 'Mastered (Step Up)', color: 'hover:border-emerald-500' }
+                      ].map((btn) => (
+                        <button
+                          key={btn.id}
+                          type="button"
+                          onClick={() => setRating(btn.id)}
+                          className={`p-2.5 rounded-xl border text-xs font-medium transition-all ${btn.color} ${
+                            rating === btn.id
+                              ? 'bg-indigo-950/80 border-indigo-500 text-indigo-200'
+                              : 'bg-slate-950/50 border-slate-800 text-slate-400'
+                          }`}
+                        >
+                          {btn.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Analyze Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleAnalyzeSolution}
+                    disabled={analyzing || !candidateCode.trim()}
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>{analyzing ? 'Analyzing with MCP Tools...' : 'Run Autonomous Code Review'}</span>
+                  </motion.button>
+
+                  {/* Analysis Results Display */}
+                  {analysisResult && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 rounded-xl bg-slate-950/80 border border-indigo-900/40 space-y-3"
+                    >
+                      <h4 className="text-xs font-semibold text-indigo-300">Analysis & Recommendation</h4>
+                      <p className="text-xs text-slate-300">
+                        {analysisResult.recommendation?.stepping_intent}
+                      </p>
+
+                      <div className="space-y-1.5 pt-2 border-t border-slate-800">
+                        <span className="text-[11px] font-semibold text-slate-400 uppercase">Recommended Next Challenges:</span>
+                        {analysisResult.recommendation?.recommended_stepped_problems?.map((p, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs p-2 rounded bg-slate-900 border border-slate-800">
+                            <span className="font-mono text-slate-200 font-medium">{p.task_id}</span>
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400">{p.difficulty}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+```
+
+---
+
+
+## 📄 File: `frontend/src/components/AICompanyPredictor.jsx`
+
+```markdown
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Building2, Layers, CheckCircle2, ArrowRight } from 'lucide-react';
+
+export function AICompanyPredictor({ onSelectProblem }) {
+  const [description, setDescription] = useState('');
+  const [title, setTitle] = useState('');
+  const [difficulty, setDifficulty] = useState('Medium');
+  const [predicting, setPredicting] = useState(false);
+  const [results, setResults] = useState(null);
+
+  const handlePredict = async (e) => {
+    e.preventDefault();
+    if (!description.trim()) return;
+
+    setPredicting(true);
+    try {
+      const res = await fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description,
+          difficulty,
+          top_k: 8
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setResults(data.data);
+      }
+    } catch (err) {
+      console.error('Prediction failed:', err);
+    } finally {
+      setPredicting(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Left: Input Form */}
+      <div className="lg:col-span-6 space-y-4">
+        <div className="glass-panel rounded-2xl p-6 space-y-4">
+          <div>
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-indigo-400" />
+              <span>Multi-Label Company Classifier</span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Paste any raw problem statement. The ML engine will predict which companies can ask it, its algorithmic archetype, and 5 alternative links.
+            </p>
+          </div>
+
+          <form onSubmit={handlePredict} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Problem Title (Optional)</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Alien Dictionary"
+                  className="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Target Difficulty</label>
+                <select
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value)}
+                  className="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Hard">Hard</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Problem Statement & Constraints</label>
+              <textarea
+                rows={7}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Paste full problem statement, input/output formats, and constraints here..."
+                className="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 font-sans resize-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={predicting || !description.trim()}
+              className="w-full py-2.5 px-4 bg-gradient-to-r from-indigo-600 via-cyan-600 to-purple-600 hover:opacity-90 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>{predicting ? 'Classifying Vectors across 200 Companies...' : 'Predict Asking Companies & Archetype'}</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Right: Prediction Output */}
+      <div className="lg:col-span-6 space-y-4">
+        <AnimatePresence mode="wait">
+          {results ? (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+            >
+              {/* Archetype & Topic Match */}
+              <div className="glass-panel rounded-2xl p-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Detected Archetype</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-indigo-950 text-indigo-300 border border-indigo-800">
+                    Cluster #{results.archetype_cluster?.cluster_id}
+                  </span>
+                </div>
+                <h4 className="text-base font-bold text-slate-100">{results.archetype_cluster?.title}</h4>
+                <p className="text-xs text-slate-300">{results.archetype_cluster?.description}</p>
+
+                <div className="flex flex-wrap gap-1.5 pt-2">
+                  {results.archetype_cluster?.top_tags?.map((t, i) => (
+                    <span key={i} className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Company Probability Breakdown */}
+              <div className="glass-panel rounded-2xl p-6 space-y-4">
+                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                  <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Company Likelihood Breakdown</span>
+                </h4>
+
+                <div className="space-y-3">
+                  {results.company_predictions?.map((comp, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs font-medium">
+                        <span className="text-slate-200 uppercase font-mono">{comp.company}</span>
+                        <span className="text-indigo-400">{comp.match_percentage}% Match</span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${comp.match_percentage}%` }}
+                          transition={{ duration: 0.6, delay: idx * 0.05 }}
+                          className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="glass-panel rounded-2xl p-12 text-center text-slate-500 space-y-3 h-full flex flex-col items-center justify-center">
+              <Layers className="w-10 h-10 text-slate-600" />
+              <p className="text-sm font-medium text-slate-400">Prediction Engine Ready</p>
+              <p className="text-xs text-slate-500 max-w-sm">
+                Enter a problem statement and click Predict to see real-time company match probabilities, archetype assignment, and similar practice questions.
+              </p>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+```
+
+---
+
+
+## 📄 File: `frontend/src/components/ArchetypeClusters.jsx`
+
+```markdown
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Layers, Sparkles, Code2, Users, ArrowUpRight, X, ExternalLink, Compass } from 'lucide-react';
+
+const clusterVariants = {
+  hidden: { opacity: 0, scale: 0.96 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { type: 'spring', stiffness: 350, damping: 25 }
+  }
+};
+
+const tierColors = {
+  'Easy': 'bg-emerald-500',
+  'Easy-Medium': 'bg-cyan-500',
+  'Medium': 'bg-indigo-500',
+  'Medium-Hard': 'bg-amber-500',
+  'Hard': 'bg-rose-500'
+};
+
+const tierTextColors = {
+  'Easy': 'text-emerald-400 border-emerald-800/80 bg-emerald-950/60',
+  'Easy-Medium': 'text-cyan-400 border-cyan-800/80 bg-cyan-950/60',
+  'Medium': 'text-indigo-400 border-indigo-800/80 bg-indigo-950/60',
+  'Medium-Hard': 'text-amber-400 border-amber-800/80 bg-amber-950/60',
+  'Hard': 'text-rose-400 border-rose-800/80 bg-rose-950/60'
+};
+
+export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem, onFilterExplorerByCluster }) {
+  const clusters = metadata.clusters || [];
+  const [selectedCluster, setSelectedCluster] = useState(null);
+  const [activeTierTab, setActiveTierTab] = useState('Easy-Medium');
+
+  const handleOpenClusterModal = (cluster) => {
+    setSelectedCluster(cluster);
+    // Default to first non-empty tier
+    const td = cluster.tier_distribution || {};
+    const firstNonEmpty = ['Easy', 'Easy-Medium', 'Medium', 'Medium-Hard', 'Hard'].find(t => (td[t] || 0) > 0) || 'Medium';
+    setActiveTierTab(firstNonEmpty);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="glass-panel rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+            <Layers className="w-5 h-5 text-indigo-400" />
+            <span>30 Algorithmic Archetype Clusters & 5-Tier Stratification</span>
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">
+            Unsupervised K-Means clustering partitions 2,870 problems into 30 core patterns with 5 granular difficulty bands (Easy, Easy-Medium, Medium, Medium-Hard, Hard).
+          </p>
+        </div>
+        <span className="px-3 py-1 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 text-xs font-mono self-start sm:self-auto">
+          {clusters.length} Archetypes
+        </span>
+      </div>
+
+      {/* Grid of 30 Clusters */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        transition={{ staggerChildren: 0.03 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
+        {clusters.map((c) => {
+          const totalSize = c.problem_count || c.size || 1;
+          const td = c.tier_distribution || { 'Easy': 0, 'Easy-Medium': 0, 'Medium': 0, 'Medium-Hard': 0, 'Hard': 0 };
+
+          return (
+            <motion.div
+              key={c.cluster_id}
+              variants={clusterVariants}
+              whileHover={{ y: -4 }}
+              onClick={() => handleOpenClusterModal(c)}
+              className="glass-panel-interactive rounded-xl p-5 space-y-3 flex flex-col justify-between cursor-pointer group"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-900 text-indigo-400 border border-slate-800">
+                    Cluster #{c.cluster_id}
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    {c.problem_count} Problems
+                  </span>
+                </div>
+
+                <h4 className="text-sm font-semibold text-slate-100 group-hover:text-indigo-300 transition-colors line-clamp-1 mb-1">
+                  {c.title}
+                </h4>
+                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                  {c.description}
+                </p>
+              </div>
+
+              <div>
+                {/* 5-Tier Difficulty Proportional Bar */}
+                <div className="space-y-1 mb-3">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                    <span>Difficulty Stratification</span>
+                    <span>5 Bands</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden flex">
+                    {['Easy', 'Easy-Medium', 'Medium', 'Medium-Hard', 'Hard'].map((tier) => {
+                      const count = td[tier] || 0;
+                      if (count === 0) return null;
+                      const pct = (count / totalSize) * 100;
+                      return (
+                        <div
+                          key={tier}
+                          style={{ width: `${pct}%` }}
+                          title={`${tier}: ${count} problems`}
+                          className={`${tierColors[tier]} h-full`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {c.top_tags?.slice(0, 3).map((tag, i) => (
+                    <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-slate-850 text-slate-300 border border-slate-800">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="pt-2 border-t border-slate-800/80 text-[11px] text-indigo-400 flex items-center justify-between">
+                  <span className="group-hover:translate-x-0.5 transition-transform">Explore {c.problem_count} Problems by Tier</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </motion.div>
+
+      {/* Cluster Problems By Difficulty Tier Modal / Drawer */}
+      <AnimatePresence>
+        {selectedCluster && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="glass-panel w-full max-w-4xl max-h-[85vh] rounded-3xl p-6 sm:p-8 flex flex-col space-y-5 relative overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">
+                      Cluster #{selectedCluster.cluster_id}
+                    </span>
+                    <span className="text-xs text-slate-400 font-mono">
+                      {selectedCluster.problem_count} Problems
+                    </span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-100">{selectedCluster.title}</h2>
+                  <p className="text-xs text-slate-400 mt-1">{selectedCluster.description}</p>
+                </div>
+
+                <button
+                  onClick={() => setSelectedCluster(null)}
+                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* 5 Difficulty Tier Selector Tabs */}
+              <div className="flex flex-wrap items-center gap-2">
+                {['Easy', 'Easy-Medium', 'Medium', 'Medium-Hard', 'Hard'].map((tier) => {
+                  const count = (selectedCluster.tier_distribution && selectedCluster.tier_distribution[tier]) || 0;
+                  const isActive = activeTierTab === tier;
+
+                  return (
+                    <button
+                      key={tier}
+                      onClick={() => setActiveTierTab(tier)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all border ${
+                        isActive
+                          ? 'bg-slate-800 border-indigo-500 text-slate-100 shadow-md shadow-indigo-500/10'
+                          : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${tierColors[tier]}`} />
+                      <span>{tier}</span>
+                      <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-slate-950 text-slate-400 border border-slate-800">
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                {onFilterExplorerByCluster && (
+                  <button
+                    onClick={() => {
+                      onFilterExplorerByCluster(selectedCluster.cluster_id);
+                      setSelectedCluster(null);
+                    }}
+                    className="ml-auto px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-indigo-500/20"
+                  >
+                    <Compass className="w-3.5 h-3.5" />
+                    <span>Open in Problem Explorer</span>
+                  </button>
+                )}
+              </div>
+
+              {/* List of Problems for the Selected Difficulty Tier */}
+              <div className="flex-1 overflow-y-auto pr-1 space-y-2 max-h-96">
+                {selectedCluster.problems_by_tier && selectedCluster.problems_by_tier[activeTierTab]?.length > 0 ? (
+                  selectedCluster.problems_by_tier[activeTierTab].map((p, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between gap-3 hover:border-slate-700 transition-colors"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-xs text-slate-100">{p.title || p.task_id}</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${tierTextColors[p.difficulty_tier || activeTierTab]}`}>
+                            {p.difficulty_tier || activeTierTab}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+                          <span>{p.companies_count ? `${p.companies_count} Companies asked` : 'General Pool'}</span>
+                          <span>•</span>
+                          <div className="flex gap-1">
+                            {p.topic_tags?.map((t, i) => (
+                              <span key={i} className="text-[10px] px-1.5 py-0.2 rounded bg-slate-950 text-slate-400 border border-slate-800">
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {onInspectProblem && (
+                          <button
+                            onClick={() => {
+                              onInspectProblem(p);
+                              setSelectedCluster(null);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 text-xs font-medium transition-colors"
+                          >
+                            Inspect
+                          </button>
+                        )}
+                        <a
+                          href={p.leetcode_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+                          title="Solve on LeetCode"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-xs text-slate-500">
+                    No problems classified in the <span className="font-semibold text-slate-400">{activeTierTab}</span> tier for this cluster.
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+```
+
+---
+
+
+## 📄 File: `frontend/src/components/CrawlerConsole.jsx`
+
+```markdown
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Terminal, Play, Square, DownloadCloud, Activity, CheckCircle2 } from 'lucide-react';
+
+export function CrawlerConsole({ metadata, onScrapeSuccess }) {
+  const [slugInput, setSlugInput] = useState('');
+  const [scraping, setScraping] = useState(false);
+  const [crawlerRunning, setCrawlerRunning] = useState(metadata.crawler_running || false);
+  const [crawlerStatus, setCrawlerStatus] = useState({ queue_size: 0, total_ingested_count: 0, recent_activity: [] });
+  const [message, setMessage] = useState(null);
+
+  const fetchCrawlerStatus = async () => {
+    try {
+      const res = await fetch('/api/crawler/status');
+      const data = await res.json();
+      if (data.status === 'success') {
+        setCrawlerStatus(data.data);
+        setCrawlerRunning(data.data.is_running);
+      }
+    } catch (err) {
+      console.error('Failed to fetch crawler status:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCrawlerStatus();
+    const interval = setInterval(fetchCrawlerStatus, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleToggleCrawler = async () => {
+    try {
+      const res = await fetch('/api/crawler/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enable: !crawlerRunning })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setCrawlerRunning(data.crawler_running);
+      }
+    } catch (err) {
+      console.error('Toggle failed:', err);
+    }
+  };
+
+  const handleScrapeSlug = async (e) => {
+    e.preventDefault();
+    if (!slugInput.trim()) return;
+
+    setScraping(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug_or_url: slugInput.trim() })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setMessage({ type: 'success', text: `Successfully scraped & enriched '${data.data.task_id}' into live database!` });
+        setSlugInput('');
+        if (onScrapeSuccess) onScrapeSuccess();
+      } else {
+        setMessage({ type: 'error', text: data.message || 'Scrape failed.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: `Network error: ${err}` });
+    } finally {
+      setScraping(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Left: Crawler Controls & Single Scraper */}
+      <div className="lg:col-span-5 space-y-4">
+        {/* Continuous Ingestion Card */}
+        <div className="glass-panel rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-indigo-400" />
+              <span>Continuous Crawler Daemon</span>
+            </h3>
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-mono border ${
+              crawlerRunning
+                ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300 animate-pulse'
+                : 'bg-slate-900 border-slate-800 text-slate-500'
+            }`}>
+              {crawlerRunning ? 'RUNNING' : 'STOPPED'}
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Crawls LeetCode GraphQL public endpoints in the background, extracts specifications, autocalibrates 30 archetypes, and dynamically indexes vectors.
+          </p>
+
+          <button
+            onClick={handleToggleCrawler}
+            className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+              crawlerRunning
+                ? 'bg-rose-950/80 hover:bg-rose-900 border border-rose-800 text-rose-300'
+                : 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-800 text-emerald-300'
+            }`}
+          >
+            {crawlerRunning ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+            <span>{crawlerRunning ? 'Pause Continuous Crawler' : 'Start Continuous Crawler'}</span>
+          </button>
+        </div>
+
+        {/* Single Problem Scraper Card */}
+        <div className="glass-panel rounded-2xl p-6 space-y-4">
+          <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <DownloadCloud className="w-4 h-4 text-cyan-400" />
+            <span>On-Demand Single Problem Ingestion</span>
+          </h3>
+
+          <form onSubmit={handleScrapeSlug} className="space-y-3">
+            <input
+              type="text"
+              value={slugInput}
+              onChange={(e) => setSlugInput(e.target.value)}
+              placeholder="e.g. median-of-two-sorted-arrays or URL..."
+              className="w-full bg-slate-900/90 border border-slate-700/60 rounded-xl p-3 text-xs font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+            />
+
+            <button
+              type="submit"
+              disabled={scraping || !slugInput.trim()}
+              className="w-full py-2.5 px-4 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:opacity-90 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50"
+            >
+              <DownloadCloud className="w-3.5 h-3.5" />
+              <span>{scraping ? 'Extracting & Auto-Classifying...' : 'Fetch & Enrich to Live DB'}</span>
+            </button>
+          </form>
+
+          {message && (
+            <div className={`p-3 rounded-xl text-xs font-mono ${
+              message.type === 'success' ? 'bg-emerald-950/70 border border-emerald-800 text-emerald-300' : 'bg-rose-950/70 border border-rose-800 text-rose-300'
+            }`}>
+              {message.text}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right: Real-time Ingestion Stream Console */}
+      <div className="lg:col-span-7 space-y-4">
+        <div className="glass-panel rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-emerald-400" />
+              <span>Live Ingestion Activity Log</span>
+            </h4>
+            <span className="text-xs font-mono text-slate-500">
+              Total Ingested: {crawlerStatus.total_ingested_count || 0}
+            </span>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300 h-80 overflow-y-auto space-y-2">
+            {crawlerStatus.recent_activity?.length > 0 ? (
+              crawlerStatus.recent_activity.map((log, idx) => (
+                <div key={idx} className="flex items-start gap-2 border-b border-slate-900 pb-1.5">
+                  <span className="text-slate-500 text-[11px] shrink-0">[{log.time}]</span>
+                  <span className={log.status === 'success' ? 'text-emerald-400' : 'text-slate-300'}>
+                    {log.message || JSON.stringify(log)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="text-slate-600 text-center py-24">
+                No crawler activity recorded yet. Start the crawler or fetch a problem to view logs.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 ```
 
