@@ -1301,6 +1301,7 @@ def analyze_solution_endpoint(req: SolutionAnalysisRequest):
 
 
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 # Mount React static assets if built
 DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend", "dist")
@@ -1308,6 +1309,16 @@ if os.path.exists(DIST_DIR):
     assets_dir = os.path.join(DIST_DIR, "assets")
     if os.path.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+
+@app.get("/favicon.svg")
+@app.get("/favicon.ico")
+def get_favicon():
+    for f in ["favicon.svg", "favicon.ico"]:
+        fav_path = os.path.join(DIST_DIR, f)
+        if os.path.exists(fav_path):
+            return FileResponse(fav_path)
+    return HTMLResponse("", status_code=204)
 
 
 @app.get("/", response_class=HTMLResponse)
