@@ -304,3 +304,26 @@ class ContinuousIngestionWorker:
 
             # Sleep between background crawl cycles
             time.sleep(self.poll_interval)
+
+
+class NeetCodeScraper:
+    """
+    Scraper and ingestor for NeetCode.io roadmap, tracks, and curated problem collections (NeetCode 75, 150, 250+).
+    """
+    @staticmethod
+    def fetch_roadmap_data() -> Dict[str, Any]:
+        """Loads and returns the comprehensive NeetCode roadmap DAG and problem tracks."""
+        from neetcode_roadmap_data import get_neetcode_roadmap_summary
+        return get_neetcode_roadmap_summary()
+
+    @staticmethod
+    def get_track_problems(track_id: str, list_type: Optional[str] = "all") -> List[Dict[str, Any]]:
+        """Filters problems by track and list type (nc75, nc150, or all/nc250)."""
+        from neetcode_roadmap_data import NEETCODE_PROBLEMS
+        problems = [p for p in NEETCODE_PROBLEMS if p["track"] == track_id]
+        if list_type == "nc75":
+            return [p for p in problems if p.get("in_nc75")]
+        elif list_type == "nc150":
+            return [p for p in problems if p.get("in_nc150")]
+        return problems
+

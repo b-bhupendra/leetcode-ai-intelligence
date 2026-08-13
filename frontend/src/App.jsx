@@ -19,7 +19,9 @@ import { AICompanyPredictor } from './components/AICompanyPredictor';
 import { LiveCopilotStream } from './components/LiveCopilotStream';
 import { CrawlerConsole } from './components/CrawlerConsole';
 import { ArchetypeClusters } from './components/ArchetypeClusters';
+import { NeetCodeVisualRoadmap } from './components/NeetCodeVisualRoadmap';
 import { ProblemInspectorDrawer } from './components/ProblemInspectorDrawer';
+import { Map } from 'lucide-react';
 
 const tabContentVariants = {
   initial: { opacity: 0, y: 10 },
@@ -36,7 +38,7 @@ const tabContentVariants = {
 };
 
 export function App() {
-  const [activeTab, setActiveTab] = useState('explorer');
+  const [activeTab, setActiveTab] = useState('roadmap');
   const [metadata, setMetadata] = useState({
     companies: [],
     difficulties: ['Easy', 'Medium', 'Hard'],
@@ -75,11 +77,12 @@ export function App() {
   };
 
   const navTabs = [
+    { id: 'roadmap', label: 'NeetCode Visual Roadmap', icon: Map, badge: '75 / 150 / 250' },
     { id: 'explorer', label: 'Problem Explorer', icon: Compass, badge: `${metadata.total_problems || 2870}` },
     { id: 'analyzer', label: 'Company Classifier', icon: Sparkles },
     { id: 'copilot', label: 'Live MCP Copilot', icon: Radio, pulse: true },
     { id: 'scraper', label: 'Crawler Daemon', icon: Terminal },
-    { id: 'clusters', label: '15 Archetypes & Roadmap', icon: Layers }
+    { id: 'clusters', label: '15 Archetypes & GFG', icon: Layers }
   ];
 
   return (
@@ -173,6 +176,13 @@ export function App() {
             animate="animate"
             exit="exit"
           >
+            {activeTab === 'roadmap' && (
+              <NeetCodeVisualRoadmap
+                onSelectProblem={handleSelectProblem}
+                onFilterCluster={handleFilterExplorerByCluster}
+              />
+            )}
+
             {activeTab === 'explorer' && (
               <ProblemExplorer
                 metadata={metadata}

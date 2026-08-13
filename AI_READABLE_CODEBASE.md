@@ -1025,6 +1025,34 @@ def get_cluster_tier_problems(cluster_id: int, tier_name: str):
     })
 
 
+@app.get("/api/roadmap/neetcode")
+def get_neetcode_roadmap():
+    """Returns the interactive NeetCode DAG roadmap with all nodes, prerequisite edges, and problem tracks."""
+    try:
+        from scraper_engine import NeetCodeScraper
+        data = NeetCodeScraper.fetch_roadmap_data()
+        return JSONResponse(content={"status": "success", "data": data})
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+
+@app.get("/api/roadmap/neetcode/track/{track_id}")
+def get_neetcode_track_problems(track_id: str, list_type: Optional[str] = "all"):
+    """Returns problems for a specific NeetCode track (filtered by nc75, nc150, or all)."""
+    try:
+        from scraper_engine import NeetCodeScraper
+        problems = NeetCodeScraper.get_track_problems(track_id, list_type=list_type)
+        return JSONResponse(content={
+            "status": "success",
+            "track": track_id,
+            "list_type": list_type,
+            "problem_count": len(problems),
+            "problems": problems
+        })
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+
 @app.post("/api/predict")
 def predict_company(req: PredictRequest):
     """Predicts which companies can/will ask a given problem, plus 5 platform alternatives."""
@@ -3158,6 +3186,29 @@ class ContinuousIngestionWorker:
             # Sleep between background crawl cycles
             time.sleep(self.poll_interval)
 
+
+class NeetCodeScraper:
+    """
+    Scraper and ingestor for NeetCode.io roadmap, tracks, and curated problem collections (NeetCode 75, 150, 250+).
+    """
+    @staticmethod
+    def fetch_roadmap_data() -> Dict[str, Any]:
+        """Loads and returns the comprehensive NeetCode roadmap DAG and problem tracks."""
+        from neetcode_roadmap_data import get_neetcode_roadmap_summary
+        return get_neetcode_roadmap_summary()
+
+    @staticmethod
+    def get_track_problems(track_id: str, list_type: Optional[str] = "all") -> List[Dict[str, Any]]:
+        """Filters problems by track and list type (nc75, nc150, or all/nc250)."""
+        from neetcode_roadmap_data import NEETCODE_PROBLEMS
+        problems = [p for p in NEETCODE_PROBLEMS if p["track"] == track_id]
+        if list_type == "nc75":
+            return [p for p in problems if p.get("in_nc75")]
+        elif list_type == "nc150":
+            return [p for p in problems if p.get("in_nc150")]
+        return problems
+
+
 ```
 
 ---
@@ -4230,7 +4281,9 @@ import { AICompanyPredictor } from './components/AICompanyPredictor';
 import { LiveCopilotStream } from './components/LiveCopilotStream';
 import { CrawlerConsole } from './components/CrawlerConsole';
 import { ArchetypeClusters } from './components/ArchetypeClusters';
+import { NeetCodeVisualRoadmap } from './components/NeetCodeVisualRoadmap';
 import { ProblemInspectorDrawer } from './components/ProblemInspectorDrawer';
+import { Map } from 'lucide-react';
 
 const tabContentVariants = {
   initial: { opacity: 0, y: 10 },
@@ -4247,7 +4300,7 @@ const tabContentVariants = {
 };
 
 export function App() {
-  const [activeTab, setActiveTab] = useState('explorer');
+  const [activeTab, setActiveTab] = useState('roadmap');
   const [metadata, setMetadata] = useState({
     companies: [],
     difficulties: ['Easy', 'Medium', 'Hard'],
@@ -4286,11 +4339,12 @@ export function App() {
   };
 
   const navTabs = [
+    { id: 'roadmap', label: 'NeetCode Visual Roadmap', icon: Map, badge: '75 / 150 / 250' },
     { id: 'explorer', label: 'Problem Explorer', icon: Compass, badge: `${metadata.total_problems || 2870}` },
     { id: 'analyzer', label: 'Company Classifier', icon: Sparkles },
     { id: 'copilot', label: 'Live MCP Copilot', icon: Radio, pulse: true },
     { id: 'scraper', label: 'Crawler Daemon', icon: Terminal },
-    { id: 'clusters', label: '15 Archetypes & Roadmap', icon: Layers }
+    { id: 'clusters', label: '15 Archetypes & GFG', icon: Layers }
   ];
 
   return (
@@ -4384,6 +4438,13 @@ export function App() {
             animate="animate"
             exit="exit"
           >
+            {activeTab === 'roadmap' && (
+              <NeetCodeVisualRoadmap
+                onSelectProblem={handleSelectProblem}
+                onFilterCluster={handleFilterExplorerByCluster}
+              />
+            )}
+
             {activeTab === 'explorer' && (
               <ProblemExplorer
                 metadata={metadata}

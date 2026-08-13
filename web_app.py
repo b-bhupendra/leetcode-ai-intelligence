@@ -188,6 +188,34 @@ def get_cluster_tier_problems(cluster_id: int, tier_name: str):
     })
 
 
+@app.get("/api/roadmap/neetcode")
+def get_neetcode_roadmap():
+    """Returns the interactive NeetCode DAG roadmap with all nodes, prerequisite edges, and problem tracks."""
+    try:
+        from scraper_engine import NeetCodeScraper
+        data = NeetCodeScraper.fetch_roadmap_data()
+        return JSONResponse(content={"status": "success", "data": data})
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+
+@app.get("/api/roadmap/neetcode/track/{track_id}")
+def get_neetcode_track_problems(track_id: str, list_type: Optional[str] = "all"):
+    """Returns problems for a specific NeetCode track (filtered by nc75, nc150, or all)."""
+    try:
+        from scraper_engine import NeetCodeScraper
+        problems = NeetCodeScraper.get_track_problems(track_id, list_type=list_type)
+        return JSONResponse(content={
+            "status": "success",
+            "track": track_id,
+            "list_type": list_type,
+            "problem_count": len(problems),
+            "problems": problems
+        })
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+
 @app.post("/api/predict")
 def predict_company(req: PredictRequest):
     """Predicts which companies can/will ask a given problem, plus 5 platform alternatives."""
