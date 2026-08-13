@@ -1643,44 +1643,311 @@ def compute_difficulty_tier(difficulty: str, topic_tags: Any, description: str =
     return "Medium"
 
 
+ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
+    0: {
+        "id": 0,
+        "name": "Two Pointers",
+        "paradigm": "Linear Pointer Patterns",
+        "phase": "Phase 1: Linear Pointer Mechanics (Weeks 1-2)",
+        "description": "Converging or diverging pointers on sorted arrays or strings for pair matching, palindrome validation, and container optimization.",
+        "invariant": "left < right with monotonic convergence condition.",
+        "complexity": "Time: O(N), Space: O(1)",
+        "canonical_examples": ["two-sum-ii-input-array-is-sorted", "3sum", "container-with-most-water", "trapping-rain-water"],
+        "keywords": ["two pointer", "opposite ends", "converge", "palindrome", "sorted pair", "left right", "partition array"]
+    },
+    1: {
+        "id": 1,
+        "name": "Sliding Window",
+        "paradigm": "Linear Pointer Patterns",
+        "phase": "Phase 1: Linear Pointer Mechanics (Weeks 1-2)",
+        "description": "Expanding/shrinking contiguous range to optimize subarray/substring bounds in single-pass linear time.",
+        "invariant": "Fixed: [R - K + 1 ... R] | Variable: expand R, while invalid shrink L.",
+        "complexity": "Time: O(N), Space: O(K) or O(1)",
+        "canonical_examples": ["maximum-average-subarray-i", "longest-substring-without-repeating-characters", "max-consecutive-ones-iii", "minimum-window-substring", "subarrays-with-k-different-integers"],
+        "keywords": ["sliding window", "subarray", "substring", "contiguous", "longest substring", "at most k", "minimum window"]
+    },
+    2: {
+        "id": 2,
+        "name": "Prefix Sum & Difference Array",
+        "paradigm": "Linear Pointer Patterns",
+        "phase": "Phase 1: Linear Pointer Mechanics (Weeks 1-2)",
+        "description": "O(1) range sum queries, prefix frequency counters, or range update increments via cumulative arrays.",
+        "invariant": "Sum(i...j) = Prefix[j+1] - Prefix[i] | Diff[L]+=V, Diff[R+1]-=V",
+        "complexity": "Time: O(1) query / O(N) precompute, Space: O(N)",
+        "canonical_examples": ["subarray-sum-equals-k", "range-sum-query-immutable", "corporate-flight-bookings", "product-of-array-except-self"],
+        "keywords": ["prefix sum", "cumulative", "difference array", "range sum", "subarray sum", "prefix", "running sum"]
+    },
+    3: {
+        "id": 3,
+        "name": "Fast & Slow Pointers",
+        "paradigm": "Linear Pointer Patterns",
+        "phase": "Phase 1: Linear Pointer Mechanics (Weeks 1-2)",
+        "description": "Two pointers moving at different speeds (1x, 2x) to detect cycles, find linked list midpoints, or discover repeating state sequences.",
+        "invariant": "slow moves 1 step, fast moves 2 steps. Intersection implies cycle.",
+        "complexity": "Time: O(N), Space: O(1)",
+        "canonical_examples": ["linked-list-cycle", "linked-list-cycle-ii", "find-the-duplicate-number", "happy-number", "middle-of-the-linked-list"],
+        "keywords": ["fast slow", "cycle", "tortoise hare", "floyd", "middle linked list", "linked list cycle", "happy number"]
+    },
+    4: {
+        "id": 4,
+        "name": "Monotonic Stack & Queue",
+        "paradigm": "Linear Structures & Specialized Memory",
+        "phase": "Phase 2: Core Linear Data Structures (Weeks 3-4)",
+        "description": "Maintaining a strictly increasing/decreasing sequence to find next greater/smaller element in O(N) amortized time.",
+        "invariant": "Stack elements maintain strict monotonicity. Pop elements that violate invariant.",
+        "complexity": "Time: O(N) amortized, Space: O(N)",
+        "canonical_examples": ["daily-temperatures", "next-greater-element-i", "largest-rectangle-in-histogram", "sliding-window-maximum", "online-stock-span"],
+        "keywords": ["monotonic stack", "next greater", "next smaller", "histogram", "monotonic queue", "temperatures", "stock span"]
+    },
+    5: {
+        "id": 5,
+        "name": "In-Place Manipulation & Cyclic Sort",
+        "paradigm": "Linear Structures & Specialized Memory",
+        "phase": "Phase 2: Core Linear Data Structures (Weeks 3-4)",
+        "description": "Swapping elements into their correct 1-indexed position in O(N) time and O(1) auxiliary space.",
+        "invariant": "while nums[i] != nums[nums[i]-1]: swap(i, nums[i]-1)",
+        "complexity": "Time: O(N), Space: O(1)",
+        "canonical_examples": ["first-missing-positive", "missing-number", "find-all-duplicates-in-an-array", "set-mismatch"],
+        "keywords": ["cyclic sort", "first missing", "in-place swap", "1 to n", "duplicate number", "missing number", "in-place"]
+    },
+    6: {
+        "id": 6,
+        "name": "Heaps & Priority Queues",
+        "paradigm": "Linear Structures & Specialized Memory",
+        "phase": "Phase 2: Core Linear Data Structures (Weeks 3-4)",
+        "description": "Tracking top K elements, running medians, or multi-stream merges via binary heap invariants.",
+        "invariant": "Min-heap / Max-heap root invariant. Top-K maintains heap of size K.",
+        "complexity": "Time: O(N log K), Space: O(K)",
+        "canonical_examples": ["kth-largest-element-in-an-array", "top-k-frequent-elements", "find-median-from-data-stream", "merge-k-sorted-lists", "task-scheduler"],
+        "keywords": ["heap", "priority queue", "kth largest", "top k", "median stream", "min heap", "max heap", "priority"]
+    },
+    7: {
+        "id": 7,
+        "name": "Trie & Hash Mechanics",
+        "paradigm": "Linear Structures & Specialized Memory",
+        "phase": "Phase 2: Core Linear Data Structures (Weeks 3-4)",
+        "description": "Prefix matching, frequency counting, and custom rolling hashes across large strings and vocabularies.",
+        "invariant": "Prefix tree node transition on char. Rolling hash: H = (H * B + C) % M",
+        "complexity": "Time: O(L) per word, Space: O(N * L * Alphabet)",
+        "canonical_examples": ["implement-trie-prefix-tree", "word-search-ii", "longest-duplicate-substring", "group-anagrams", "design-add-and-search-words-data-structure"],
+        "keywords": ["trie", "prefix tree", "hash table", "rolling hash", "rabin karp", "anagram", "hash map", "frequency map"]
+    },
+    8: {
+        "id": 8,
+        "name": "Tree & Tree DP",
+        "paradigm": "Tree, Graph & Search Space Traversal",
+        "phase": "Phase 3: Hierarchical Structures & Search Space (Weeks 5-6)",
+        "description": "Recursion, structural traversals (In/Pre/Post/Level-order), and bottom-up tree state propagation.",
+        "invariant": "State(node) = f(State(node.left), State(node.right))",
+        "complexity": "Time: O(N), Space: O(H) where H is tree height",
+        "canonical_examples": ["lowest-common-ancestor-of-a-binary-tree", "binary-tree-maximum-path-sum", "diameter-of-binary-tree", "house-robber-iii", "serialize-and-deserialize-binary-tree"],
+        "keywords": ["tree", "binary tree", "bst", "lowest common ancestor", "tree dp", "traversal", "postorder", "inorder", "preorder"]
+    },
+    9: {
+        "id": 9,
+        "name": "Graph Traversal & Matrix BFS/DFS",
+        "paradigm": "Tree, Graph & Search Space Traversal",
+        "phase": "Phase 4: Graph Theory & Combinatorial Search (Weeks 7-8)",
+        "description": "Connected components, flood fill, shortest path in unweighted grids, multi-source BFS, and Dijkstra's algorithm.",
+        "invariant": "Queue tracks frontier level-by-level; Visited set prevents infinite cycles.",
+        "complexity": "Time: O(V + E) or O(R * C), Space: O(V + E)",
+        "canonical_examples": ["number-of-islands", "rotting-oranges", "pacific-atlantic-water-flow", "word-ladder", "clone-graph", "cheapest-flights-within-k-stops"],
+        "keywords": ["graph", "bfs", "dfs", "matrix", "grid", "islands", "shortest path", "flood fill", "dijkstra", "bipartite"]
+    },
+    10: {
+        "id": 10,
+        "name": "DSU & Topological Sort",
+        "paradigm": "Tree, Graph & Search Space Traversal",
+        "phase": "Phase 4: Graph Theory & Combinatorial Search (Weeks 7-8)",
+        "description": "Cycle detection, dynamic connectivity (Union-Find), and dependency ordering for DAGs.",
+        "invariant": "DSU: Find(x) == Find(y) | Topo: indegree == 0 nodes enter queue first.",
+        "complexity": "Time: O((V+E) * alpha(V)) or O(V+E), Space: O(V+E)",
+        "canonical_examples": ["course-schedule", "course-schedule-ii", "redundant-connection", "graph-valid-tree", "accounts-merge", "number-of-provinces"],
+        "keywords": ["union find", "dsu", "topological sort", "indegree", "cycle detection", "disjoint set", "course schedule", "connected components"]
+    },
+    11: {
+        "id": 11,
+        "name": "Backtracking & Combinatorial Search",
+        "paradigm": "Tree, Graph & Search Space Traversal",
+        "phase": "Phase 4: Graph Theory & Combinatorial Search (Weeks 7-8)",
+        "description": "Systematically exploring state options via DFS decision trees with constraint pruning.",
+        "invariant": "Choose -> Explore -> Unchoose (backtrack state restore)",
+        "complexity": "Time: O(K^N) or O(N!), Space: O(N) recursion stack",
+        "canonical_examples": ["subsets", "permutations", "n-queens", "sudoku-solver", "word-search", "combination-sum", "palindrome-partitioning"],
+        "keywords": ["backtracking", "subsets", "permutations", "combinations", "n queens", "pruning", "dfs search", "sudoku", "combination sum"]
+    },
+    12: {
+        "id": 12,
+        "name": "Binary Search on Solution Space",
+        "paradigm": "Optimization & State Space Paradigms",
+        "phase": "Phase 3: Hierarchical Structures & Search Space (Weeks 5-6)",
+        "description": "Searching for optimal boundary in monotonic decision spaces f(x) -> {True, False}.",
+        "invariant": "low <= high; monotonic predicate condition divides search space.",
+        "complexity": "Time: O(N log(SearchSpace)), Space: O(1)",
+        "canonical_examples": ["koko-eating-bananas", "capacity-to-ship-packages-within-d-days", "split-array-largest-sum", "find-first-and-last-position-of-element-in-sorted-array", "search-in-rotated-sorted-array"],
+        "keywords": ["binary search", "search space", "monotonic", "koko", "capacity", "optimal boundary", "bisect", "rotated sorted"]
+    },
+    13: {
+        "id": 13,
+        "name": "Dynamic Programming",
+        "paradigm": "Optimization & State Space Paradigms",
+        "phase": "Phase 5: Advanced Optimization & State Transitions (Weeks 9-11)",
+        "description": "Overlapping subproblems & optimal substructure (1D, 2D, Grid, Interval, and Bitmask DP).",
+        "invariant": "DP[state] = optimal_transition(DP[sub_states])",
+        "complexity": "Time: O(States * Transitions), Space: O(States)",
+        "canonical_examples": ["climbing-stairs", "house-robber", "longest-common-subsequence", "coin-change", "burst-balloons", "edit-distance", "target-sum"],
+        "keywords": ["dynamic programming", "memoization", "knapsack", "subsequence", "interval dp", "bitmask dp", "state transition", "dp", "longest common"]
+    },
+    14: {
+        "id": 14,
+        "name": "Greedy & Interval Scheduling",
+        "paradigm": "Optimization & State Space Paradigms",
+        "phase": "Phase 5: Advanced Optimization & State Transitions (Weeks 9-11)",
+        "description": "Making locally optimal choices and merging/sorting overlapping intervals.",
+        "invariant": "Sort by start/end time. Greedy choice property guarantees global optimum.",
+        "complexity": "Time: O(N log N), Space: O(1) or O(N)",
+        "canonical_examples": ["merge-intervals", "non-overlapping-intervals", "task-scheduler", "gas-station", "jump-game", "minimum-number-of-arrows-to-burst-balloons"],
+        "keywords": ["greedy", "intervals", "merge intervals", "interval scheduling", "locally optimal", "jump game", "gas station", "interval"]
+    }
+}
+
+CORE_PARADIGMS = [
+    "Linear Pointer Patterns",
+    "Linear Structures & Specialized Memory",
+    "Tree, Graph & Search Space Traversal",
+    "Optimization & State Space Paradigms"
+]
+
+ROADMAP_PHASES = [
+    {"phase": "Phase 1: Linear Pointer Mechanics (Weeks 1-2)", "archetypes": [0, 1, 2, 3], "goal": "Shift from O(N^2) brute force to O(N) single-pass time complexity."},
+    {"phase": "Phase 2: Core Linear Data Structures (Weeks 3-4)", "archetypes": [4, 5, 6, 7], "goal": "Solve order-dependent and range-query problems efficiently without extra re-sorting."},
+    {"phase": "Phase 3: Hierarchical Structures & Search Space (Weeks 5-6)", "archetypes": [8, 12], "goal": "Master divide-and-conquer logic and monotonic functions."},
+    {"phase": "Phase 4: Graph Theory & Combinatorial Search (Weeks 7-8)", "archetypes": [9, 10, 11], "goal": "Model real-world dependency networks and state-space prunings."},
+    {"phase": "Phase 5: Advanced Optimization & State Transitions (Weeks 9-11)", "archetypes": [13, 14], "goal": "Recognize state transition equations and convert exponential recursion into polynomial time."},
+    {"phase": "Phase 6: Composite Patterns & Advanced Structures (Weeks 12+)", "archetypes": [7, 13], "goal": "Handle edge cases under strict O(N log N) or O(1) constraints."}
+]
+
+
+def classify_problem_to_archetype(row) -> int:
+    """Classifies a problem into one of the 15 mutually exclusive archetypes."""
+    task_id = str(row.get("task_id", "")).lower()
+    title = str(row.get("title", "")).lower()
+    desc = str(row.get("problem_description", "")).lower()
+    
+    tags = row.get("topic_tags", [])
+    if isinstance(tags, (list, np.ndarray)):
+        tag_str = " ".join([str(t).lower() for t in tags])
+    elif isinstance(tags, str):
+        tag_str = tags.lower()
+    else:
+        tag_str = ""
+
+    full_text = f"{task_id} {title} {tag_str} {desc[:400]}"
+
+    # Exact Canonical Priority Rules
+    if any(k in full_text for k in ["trie", "prefix tree", "rolling hash", "rabin karp"]):
+        return 7
+    if any(k in full_text for k in ["union find", "disjoint set", "topological sort", "course schedule", "bipartite"]):
+        return 10
+    if any(k in full_text for k in ["monotonic stack", "daily temperatures", "next greater", "next smaller", "largest rectangle in histogram"]):
+        return 4
+    if any(k in full_text for k in ["cyclic sort", "first missing positive", "missing number", "set mismatch", "find all numbers disappeared", "find all duplicates in an array"]):
+        return 5
+    if any(k in full_text for k in ["fast slow", "linked list cycle", "tortoise hare", "middle of the linked list", "happy number", "remove nth node from end", "reorder list"]):
+        return 3
+    if any(k in full_text for k in ["sliding window", "longest substring without repeating", "minimum window substring", "subarrays with k different", "longest repeating character replacement"]):
+        return 1
+    if any(k in full_text for k in ["prefix sum", "difference array", "subarray sum equals", "range sum query", "product of array except self"]):
+        return 2
+    if any(k in full_text for k in ["binary search", "search in rotated", "koko eating", "capacity to ship", "split array largest sum", "find peak element"]):
+        return 12
+    if any(k in full_text for k in ["heap", "priority queue", "kth largest", "top k frequent", "median from data stream", "merge k sorted"]):
+        return 6
+    if any(k in full_text for k in ["binary tree", "binary search tree", "lowest common ancestor", "serialize and deserialize", "tree dp", "diameter of binary tree"]):
+        return 8
+    if any(k in full_text for k in ["backtracking", "n-queens", "sudoku", "permutations", "subsets", "combination sum", "word search"]):
+        return 11
+    if any(k in full_text for k in ["dynamic programming", "longest common subsequence", "coin change", "house robber", "edit distance", "burst balloons", "knapsack"]):
+        return 13
+    if any(k in full_text for k in ["interval", "merge intervals", "task scheduler", "gas station", "jump game", "non-overlapping"]):
+        return 14
+    if any(k in full_text for k in ["graph", "bfs", "dfs", "matrix", "islands", "shortest path", "rotting oranges", "flood fill"]):
+        return 9
+    if any(k in full_text for k in ["two pointer", "3sum", "container with most water", "two sum ii", "trapping rain water", "valid palindrome"]):
+        return 0
+
+    # Secondary Topic Tag Matches
+    if "dynamic programming" in tag_str or "memoization" in tag_str:
+        return 13
+    if "tree" in tag_str or "binary tree" in tag_str or "binary search tree" in tag_str:
+        return 8
+    if "graph" in tag_str or "breadth-first search" in tag_str or "depth-first search" in tag_str or "matrix" in tag_str:
+        return 9
+    if "binary search" in tag_str:
+        return 12
+    if "heap (priority queue)" in tag_str:
+        return 6
+    if "sliding window" in tag_str:
+        return 1
+    if "prefix sum" in tag_str:
+        return 2
+    if "linked list" in tag_str:
+        return 3
+    if "stack" in tag_str or "monotonic stack" in tag_str:
+        return 4
+    if "two pointers" in tag_str:
+        return 0
+    if "greedy" in tag_str:
+        return 14
+    if "backtracking" in tag_str:
+        return 11
+    if "trie" in tag_str:
+        return 7
+    if "union find" in tag_str or "topological sort" in tag_str:
+        return 10
+
+    return 0
+
+
 class ProblemClusterEngine:
     """
-    Unsupervised problem clustering into algorithmic archetypes + NearestNeighbors similarity index
-    with 5-tier difficulty stratification (Easy, Easy-Medium, Medium, Medium-Hard, Hard).
+    Unified 15-Archetype Taxonomy Engine (Zero Duplication)
+    Classifies 2,870+ problems into 15 algorithmic archetypes across 4 Core Paradigms,
+    stratified into 5 Difficulty Tiers with sub-millisecond NearestNeighbors similarity lookup.
     """
-    def __init__(self, n_clusters: int = 30):
-        self.n_clusters = n_clusters
-        self.kmeans = MiniBatchKMeans(
-            n_clusters=n_clusters,
-            random_state=42,
-            batch_size=256,
-            n_init=10
-        )
+    def __init__(self, n_clusters: int = 15):
+        self.n_clusters = 15
         self.nn_index = NearestNeighbors(metric="cosine", algorithm="brute")
         self.cluster_labels: Dict[int, str] = {}
         self.cluster_summaries: Dict[int, Dict[str, Any]] = {}
+        self.archetypes_taxonomy = ARCHETYPES_TAXONOMY
+        self.core_paradigms = CORE_PARADIGMS
+        self.roadmap_phases = ROADMAP_PHASES
         self.is_fitted = False
 
     def fit(self, X: csr_matrix, df: pd.DataFrame, feature_extractor: LeetCodeFeatureExtractor):
-        print(f"Clustering {X.shape[0]} LeetCode problems into {self.n_clusters} algorithmic archetypes with 5-tier difficulty stratification...")
-        cluster_ids = self.kmeans.fit_predict(X)
-        self.nn_index.fit(X)
-
+        print(f"Mapping {X.shape[0]} LeetCode problems into Unified 15-Archetype Taxonomy...")
+        
+        # 1. Classify each problem into 1 of 15 Archetypes
+        cluster_ids = df.apply(classify_problem_to_archetype, axis=1).values
         df["cluster_id"] = cluster_ids
-        if "difficulty_tier" not in df.columns:
-            df["difficulty_tier"] = df.apply(
-                lambda row: compute_difficulty_tier(row.get("difficulty"), row.get("topic_tags"), row.get("problem_description", "")),
-                axis=1
-            )
+        
+        # 2. Assign 5-Tier Difficulty Stratification
+        df["difficulty_tier"] = df.apply(
+            lambda row: compute_difficulty_tier(row.get("difficulty"), row.get("topic_tags"), row.get("problem_description", "")),
+            axis=1
+        )
+        
+        # 3. Fit Nearest Neighbors index on all vectors
+        self.nn_index.fit(X)
 
         terms = np.array(feature_extractor.text_vectorizer.get_feature_names_out())
         
-        seen_titles = set()
-        for c_id in range(self.n_clusters):
+        for c_id, arch in self.archetypes_taxonomy.items():
             c_members = df[df["cluster_id"] == c_id]
             size = len(c_members)
             
-            # 1. Extract Top Topic Tags
+            # Extract Top Tags
             all_tags = []
             for tags in c_members["topic_tags"]:
                 if isinstance(tags, (list, np.ndarray)):
@@ -1689,15 +1956,9 @@ class ProblemClusterEngine:
                     all_tags.extend([t.strip() for t in tags.split(";")])
             
             tag_counts = pd.Series(all_tags).value_counts()
-            top_tags = tag_counts.head(4).index.tolist() if not tag_counts.empty else ["Algorithms"]
+            top_tags = tag_counts.head(5).index.tolist() if not tag_counts.empty else ["Algorithms"]
             
-            # 2. Extract Top Distinctive TF-IDF Keywords from Cluster Centroid
-            center = self.kmeans.cluster_centers_[c_id][:len(terms)]
-            top_word_indices = center.argsort()[::-1][:5]
-            top_words = [terms[i] for i in top_word_indices if i < len(terms)]
-            
-            # 3. Determine Dominant Difficulty & 5-Tier Breakdown
-            diff_dist = c_members["difficulty"].value_counts().to_dict()
+            # 5-Tier Breakdown
             tier_dist = c_members["difficulty_tier"].value_counts().to_dict()
             tier_breakdown = {
                 "Easy": int(tier_dist.get("Easy", 0)),
@@ -1706,22 +1967,11 @@ class ProblemClusterEngine:
                 "Medium-Hard": int(tier_dist.get("Medium-Hard", 0)),
                 "Hard": int(tier_dist.get("Hard", 0))
             }
-            dominant_diff = max(diff_dist, key=diff_dist.get) if diff_dist else "Medium"
+            diff_dist = c_members["difficulty"].value_counts().to_dict()
 
-            # 4. Generate Unique Disambiguated Title
-            primary_tag = top_tags[0] if top_tags else "General"
-            sec_tag = top_tags[1] if len(top_tags) > 1 else "Patterns"
-            keyword_sub = top_words[0].title() if top_words else "Optimization"
-            
-            cluster_title = f"{dominant_diff} {primary_tag} & {sec_tag} ({keyword_sub})"
-            if cluster_title in seen_titles:
-                keyword_alt = top_words[1].title() if len(top_words) > 1 else f"Type {c_id}"
-                cluster_title = f"{dominant_diff} {primary_tag} & {sec_tag} ({keyword_alt})"
-            seen_titles.add(cluster_title)
-            
-            self.cluster_labels[c_id] = cluster_title
+            self.cluster_labels[c_id] = arch["name"]
 
-            # 5. Group Problems by 5 Difficulty Tiers for direct UI linking
+            # Group Problems by 5 Difficulty Tiers for direct UI linking
             problems_by_tier = {"Easy": [], "Easy-Medium": [], "Medium": [], "Medium-Hard": [], "Hard": []}
             for _, prob in c_members.iterrows():
                 tier = prob.get("difficulty_tier", "Medium")
@@ -1743,12 +1993,18 @@ class ProblemClusterEngine:
 
             self.cluster_summaries[c_id] = {
                 "cluster_id": c_id,
-                "title": cluster_title,
+                "title": arch["name"],
+                "archetype_name": arch["name"],
+                "paradigm": arch["paradigm"],
+                "phase": arch["phase"],
+                "description": arch["description"],
+                "invariant": arch["invariant"],
+                "complexity": arch["complexity"],
+                "canonical_examples": arch["canonical_examples"],
                 "size": size,
                 "problem_count": size,
-                "description": f"{dominant_diff}-level interview pattern focusing on {primary_tag}, {sec_tag}, and {', '.join(top_words[:3])} structures.",
                 "top_tags": top_tags,
-                "top_keywords": top_words,
+                "top_keywords": arch["keywords"],
                 "difficulty_distribution": diff_dist,
                 "tier_distribution": tier_breakdown,
                 "problems_by_tier": problems_by_tier,
@@ -2001,7 +2257,13 @@ class LeetCodeIntelligenceEngine:
             difficulty=difficulty
         )
 
-        cluster_id = int(self.cluster_engine.kmeans.predict(X_vec)[0])
+        cluster_id = classify_problem_to_archetype({
+            "task_id": title,
+            "title": title,
+            "problem_description": problem_description,
+            "topic_tags": topic_tags,
+            "difficulty": difficulty
+        })
         cluster_info = self.cluster_engine.cluster_summaries.get(cluster_id, {})
 
         predictions = self.company_classifier.predict_companies(
@@ -3506,7 +3768,7 @@ export function App() {
     { id: 'analyzer', label: 'Company Classifier', icon: Sparkles },
     { id: 'copilot', label: 'Live MCP Copilot', icon: Radio, pulse: true },
     { id: 'scraper', label: 'Crawler Daemon', icon: Terminal },
-    { id: 'clusters', label: '30 Archetypes', icon: Layers }
+    { id: 'clusters', label: '15 Archetypes & Roadmap', icon: Layers }
   ];
 
   return (
@@ -3525,11 +3787,11 @@ export function App() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm text-slate-100 tracking-tight">LeetCode AI Intelligence</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-800/50">
-                  5-Tier Stratification
+                  15 Unified Archetypes
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
-                200 Companies • 30 Archetypes (Easy to Hard) • ChromaDB & SQLite
+                4 Core Paradigms • 15 Algorithmic Archetypes • 6-Phase Mastery Roadmap
               </span>
             </div>
           </div>
@@ -4760,7 +5022,24 @@ export function AICompanyPredictor({ onSelectProblem }) {
 ```markdown
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layers, Sparkles, Code2, Users, ArrowUpRight, X, ExternalLink, Compass } from 'lucide-react';
+import { 
+  Layers, 
+  Sparkles, 
+  Code2, 
+  Users, 
+  ArrowUpRight, 
+  X, 
+  ExternalLink, 
+  Compass, 
+  Milestone, 
+  Calendar, 
+  Clock, 
+  Flame, 
+  CheckCircle2, 
+  HelpCircle,
+  Cpu,
+  BookOpen
+} from 'lucide-react';
 
 const clusterVariants = {
   hidden: { opacity: 0, scale: 0.96 },
@@ -4787,114 +5066,281 @@ const tierTextColors = {
   'Hard': 'text-rose-400 border-rose-800/80 bg-rose-950/60'
 };
 
+const paradigmIcons = {
+  'Linear Pointer Patterns': '🎯',
+  'Linear Structures & Specialized Memory': '💾',
+  'Tree, Graph & Search Space Traversal': '🌲',
+  'Optimization & State Space Paradigms': '⚡'
+};
+
 export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem, onFilterExplorerByCluster }) {
   const clusters = metadata.clusters || [];
+  const [viewMode, setViewMode] = useState('taxonomy'); // 'taxonomy' | 'roadmap'
+  const [selectedParadigm, setSelectedParadigm] = useState('All');
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [activeTierTab, setActiveTierTab] = useState('Easy-Medium');
 
+  const paradigms = ['All', 'Linear Pointer Patterns', 'Linear Structures & Specialized Memory', 'Tree, Graph & Search Space Traversal', 'Optimization & State Space Paradigms'];
+
+  const filteredClusters = clusters.filter(c => {
+    if (selectedParadigm === 'All') return true;
+    return c.paradigm === selectedParadigm;
+  });
+
   const handleOpenClusterModal = (cluster) => {
     setSelectedCluster(cluster);
-    // Default to first non-empty tier
     const td = cluster.tier_distribution || {};
     const firstNonEmpty = ['Easy', 'Easy-Medium', 'Medium', 'Medium-Hard', 'Hard'].find(t => (td[t] || 0) > 0) || 'Medium';
     setActiveTierTab(firstNonEmpty);
   };
 
+  const roadmapPhases = [
+    {
+      phase: "Phase 1: Linear Pointer Mechanics",
+      weeks: "Weeks 1–2",
+      goal: "Shift from O(N²) brute force to O(N) single-pass time complexity.",
+      archetypeIds: [0, 1, 2, 3],
+      keyTakeaways: "Master left/right monotonic convergence, sliding window expansion/contraction, and cumulative prefix lookup."
+    },
+    {
+      phase: "Phase 2: Core Linear Data Structures",
+      weeks: "Weeks 3–4",
+      goal: "Solve order-dependent and range-query problems efficiently without re-sorting.",
+      archetypeIds: [4, 5, 6, 7],
+      keyTakeaways: "Strict monotonic sequence maintenance, in-place cyclic swaps, and top-K binary heap properties."
+    },
+    {
+      phase: "Phase 3: Hierarchical Structures & Search Space",
+      weeks: "Weeks 5–6",
+      goal: "Master divide-and-conquer logic, tree recursion, and monotonic answer spaces.",
+      archetypeIds: [8, 12],
+      keyTakeaways: "Bottom-up tree state propagation and binary search over continuous or discrete monotonic predicate functions."
+    },
+    {
+      phase: "Phase 4: Graph Theory & Combinatorial Search",
+      weeks: "Weeks 7–8",
+      goal: "Model real-world dependency networks and state-space tree prunings.",
+      archetypeIds: [9, 10, 11],
+      keyTakeaways: "Level-order matrix BFS, cycle detection with DSU, topological DAG ordering, and backtracking state restoration."
+    },
+    {
+      phase: "Phase 5: Advanced Optimization & State Transitions",
+      weeks: "Weeks 9–11",
+      goal: "Recognize state transition equations and convert exponential recursion to polynomial time.",
+      archetypeIds: [13, 14],
+      keyTakeaways: "1D/2D memoization tables, rolling array space optimization, interval partitions, and greedy sorting invariants."
+    },
+    {
+      phase: "Phase 6: Composite Patterns & Advanced Structures",
+      weeks: "Weeks 12+",
+      goal: "Handle high-constraint edge cases under strict O(N log N) or O(1) limits.",
+      archetypeIds: [6, 7, 13],
+      keyTakeaways: "Bitmask DP, custom Trie dictionaries, and multi-paradigm combinations (Binary Search + BFS, DP + Monotonic Stack)."
+    }
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="glass-panel rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Header & Mode Switcher */}
+      <div className="glass-panel rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-            <Layers className="w-5 h-5 text-indigo-400" />
-            <span>30 Algorithmic Archetype Clusters & 5-Tier Stratification</span>
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <Layers className="w-5 h-5 text-indigo-400" />
+              <span>Unified 15-Archetype Taxonomy & Mastery Roadmap</span>
+            </h3>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[11px] font-mono">
+              Zero Duplication
+            </span>
+          </div>
           <p className="text-xs text-slate-400 mt-1">
-            Unsupervised K-Means clustering partitions 2,870 problems into 30 core patterns with 5 granular difficulty bands (Easy, Easy-Medium, Medium, Medium-Hard, Hard).
+            2,870 LeetCode challenges partitioned into 15 algorithmic mechanics across 4 Core Paradigms with 5-tier difficulty stratification.
           </p>
         </div>
-        <span className="px-3 py-1 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 text-xs font-mono self-start sm:self-auto">
-          {clusters.length} Archetypes
-        </span>
+
+        {/* View Mode Toggle */}
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 shrink-0 self-start md:self-auto">
+          <button
+            onClick={() => setViewMode('taxonomy')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === 'taxonomy'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>15 Archetypes</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('roadmap')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === 'roadmap'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Milestone className="w-3.5 h-3.5" />
+            <span>6-Phase Roadmap</span>
+          </button>
+        </div>
       </div>
 
-      {/* Grid of 30 Clusters */}
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        transition={{ staggerChildren: 0.03 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-      >
-        {clusters.map((c) => {
-          const totalSize = c.problem_count || c.size || 1;
-          const td = c.tier_distribution || { 'Easy': 0, 'Easy-Medium': 0, 'Medium': 0, 'Medium-Hard': 0, 'Hard': 0 };
+      {/* Mode A: 15 Archetype Taxonomy Grid */}
+      {viewMode === 'taxonomy' && (
+        <div className="space-y-6">
+          {/* Paradigm Filter Pills */}
+          <div className="flex flex-wrap gap-2">
+            {paradigms.map((p) => (
+              <button
+                key={p}
+                onClick={() => setSelectedParadigm(p)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors border ${
+                  selectedParadigm === p
+                    ? 'bg-indigo-950/80 border-indigo-500 text-indigo-300'
+                    : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>{p !== 'All' ? `${paradigmIcons[p]} ${p}` : '🌐 All 4 Paradigms'}</span>
+              </button>
+            ))}
+          </div>
 
-          return (
-            <motion.div
-              key={c.cluster_id}
-              variants={clusterVariants}
-              whileHover={{ y: -4 }}
-              onClick={() => handleOpenClusterModal(c)}
-              className="glass-panel-interactive rounded-xl p-5 space-y-3 flex flex-col justify-between cursor-pointer group"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-900 text-indigo-400 border border-slate-800">
-                    Cluster #{c.cluster_id}
-                  </span>
-                  <span className="text-xs text-slate-400 font-mono">
-                    {c.problem_count} Problems
-                  </span>
+          {/* Grid of 15 Archetypes */}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            transition={{ staggerChildren: 0.03 }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
+            {filteredClusters.map((c) => {
+              const totalSize = c.problem_count || c.size || 1;
+              const td = c.tier_distribution || { 'Easy': 0, 'Easy-Medium': 0, 'Medium': 0, 'Medium-Hard': 0, 'Hard': 0 };
+
+              return (
+                <motion.div
+                  key={c.cluster_id}
+                  variants={clusterVariants}
+                  whileHover={{ y: -4 }}
+                  onClick={() => handleOpenClusterModal(c)}
+                  className="glass-panel-interactive rounded-2xl p-5 space-y-4 flex flex-col justify-between cursor-pointer group relative overflow-hidden"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-900 text-indigo-400 border border-slate-800">
+                        Archetype #{c.cluster_id + 1}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        {c.problem_count} Problems
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+                        {c.paradigm}
+                      </span>
+                      <h4 className="text-sm font-bold text-slate-100 group-hover:text-indigo-300 transition-colors">
+                        {c.title}
+                      </h4>
+                    </div>
+
+                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                      {c.description}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Invariant equation snippet */}
+                    {c.invariant && (
+                      <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800/80 font-mono text-[10px] text-cyan-300 truncate">
+                        {c.invariant}
+                      </div>
+                    )}
+
+                    {/* 5-Tier Difficulty Proportional Bar */}
+                    <div className="space-y-1">
+                      <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden flex">
+                        {['Easy', 'Easy-Medium', 'Medium', 'Medium-Hard', 'Hard'].map((tier) => {
+                          const count = td[tier] || 0;
+                          if (count === 0) return null;
+                          const pct = (count / totalSize) * 100;
+                          return (
+                            <div
+                              key={tier}
+                              style={{ width: `${pct}%` }}
+                              title={`${tier}: ${count} problems`}
+                              className={`${tierColors[tier]} h-full`}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800/80 text-[11px] text-indigo-400 flex items-center justify-between">
+                      <span className="group-hover:translate-x-0.5 transition-transform font-medium">
+                        Explore {c.problem_count} Problems across 5 Tiers
+                      </span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
+      )}
+
+      {/* Mode B: 6-Phase Chronological Mastery Roadmap */}
+      {viewMode === 'roadmap' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {roadmapPhases.map((phase, idx) => (
+              <motion.div
+                key={idx}
+                variants={clusterVariants}
+                initial="hidden"
+                animate="visible"
+                className="glass-panel rounded-2xl p-6 space-y-4 flex flex-col justify-between relative overflow-hidden"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 text-[10px] font-mono">
+                      {phase.weeks}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500">Step 0{idx + 1}</span>
+                  </div>
+
+                  <h4 className="text-sm font-bold text-slate-100">{phase.phase}</h4>
+                  <p className="text-xs text-indigo-300 font-medium">{phase.goal}</p>
+                  <p className="text-xs text-slate-400 leading-relaxed">{phase.keyTakeaways}</p>
                 </div>
 
-                <h4 className="text-sm font-semibold text-slate-100 group-hover:text-indigo-300 transition-colors line-clamp-1 mb-1">
-                  {c.title}
-                </h4>
-                <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                  {c.description}
-                </p>
-              </div>
-
-              <div>
-                {/* 5-Tier Difficulty Proportional Bar */}
-                <div className="space-y-1 mb-3">
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                    <span>Difficulty Stratification</span>
-                    <span>5 Bands</span>
-                  </div>
-                  <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden flex">
-                    {['Easy', 'Easy-Medium', 'Medium', 'Medium-Hard', 'Hard'].map((tier) => {
-                      const count = td[tier] || 0;
-                      if (count === 0) return null;
-                      const pct = (count / totalSize) * 100;
+                <div className="space-y-2 pt-3 border-t border-slate-800">
+                  <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+                    Core Archetypes Covered
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {phase.archetypeIds.map((id) => {
+                      const arch = clusters.find(c => c.cluster_id === id);
+                      if (!arch) return null;
                       return (
-                        <div
-                          key={tier}
-                          style={{ width: `${pct}%` }}
-                          title={`${tier}: ${count} problems`}
-                          className={`${tierColors[tier]} h-full`}
-                        />
+                        <button
+                          key={id}
+                          onClick={() => handleOpenClusterModal(arch)}
+                          className="text-[11px] px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 flex items-center gap-1 transition-colors"
+                        >
+                          <span>{arch.title}</span>
+                          <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                        </button>
                       );
                     })}
                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {c.top_tags?.slice(0, 3).map((tag, i) => (
-                    <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-slate-850 text-slate-300 border border-slate-800">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="pt-2 border-t border-slate-800/80 text-[11px] text-indigo-400 flex items-center justify-between">
-                  <span className="group-hover:translate-x-0.5 transition-transform">Explore {c.problem_count} Problems by Tier</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </motion.div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Cluster Problems By Difficulty Tier Modal / Drawer */}
       <AnimatePresence>
@@ -4905,21 +5351,21 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="glass-panel w-full max-w-4xl max-h-[85vh] rounded-3xl p-6 sm:p-8 flex flex-col space-y-5 relative overflow-hidden"
+              className="glass-panel w-full max-w-4xl max-h-[90vh] rounded-3xl p-6 sm:p-8 flex flex-col space-y-5 relative overflow-hidden"
             >
               {/* Header */}
               <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
                     <span className="text-xs font-mono px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">
-                      Cluster #{selectedCluster.cluster_id}
+                      Archetype #{selectedCluster.cluster_id + 1}
                     </span>
                     <span className="text-xs text-slate-400 font-mono">
-                      {selectedCluster.problem_count} Problems
+                      {selectedCluster.paradigm} • {selectedCluster.problem_count} Problems
                     </span>
                   </div>
                   <h2 className="text-lg sm:text-xl font-bold text-slate-100">{selectedCluster.title}</h2>
-                  <p className="text-xs text-slate-400 mt-1">{selectedCluster.description}</p>
+                  <p className="text-xs text-slate-300">{selectedCluster.description}</p>
                 </div>
 
                 <button
@@ -4928,6 +5374,23 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
                 >
                   <X className="w-5 h-5" />
                 </button>
+              </div>
+
+              {/* Invariant & Complexity Callout */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
+                  <span className="text-[10px] uppercase font-semibold text-cyan-400 tracking-wider flex items-center gap-1">
+                    <Code2 className="w-3 h-3" /> Core Invariant / State Equation
+                  </span>
+                  <p className="text-xs font-mono text-slate-300 break-words">{selectedCluster.invariant || 'State monotonic invariant'}</p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
+                  <span className="text-[10px] uppercase font-semibold text-emerald-400 tracking-wider flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Complexity Bounds
+                  </span>
+                  <p className="text-xs font-mono text-slate-300">{selectedCluster.complexity || 'Time: O(N), Space: O(1)'}</p>
+                </div>
               </div>
 
               {/* 5 Difficulty Tier Selector Tabs */}
@@ -4964,18 +5427,18 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
                     className="ml-auto px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm shadow-indigo-500/20"
                   >
                     <Compass className="w-3.5 h-3.5" />
-                    <span>Open in Problem Explorer</span>
+                    <span>Filter in Problem Explorer</span>
                   </button>
                 )}
               </div>
 
-              {/* List of Problems for the Selected Difficulty Tier */}
-              <div className="flex-1 overflow-y-auto pr-1 space-y-2 max-h-96">
+              {/* List of Problems for Selected Difficulty Tier */}
+              <div className="flex-1 overflow-y-auto pr-1 space-y-2 max-h-80">
                 {selectedCluster.problems_by_tier && selectedCluster.problems_by_tier[activeTierTab]?.length > 0 ? (
                   selectedCluster.problems_by_tier[activeTierTab].map((p, idx) => (
                     <div
                       key={idx}
-                      className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between gap-3 hover:border-slate-700 transition-colors"
+                      className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 flex items-center justify-between gap-3 hover:border-slate-700 transition-colors"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
@@ -5023,7 +5486,7 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
                   ))
                 ) : (
                   <div className="text-center py-12 text-xs text-slate-500">
-                    No problems classified in the <span className="font-semibold text-slate-400">{activeTierTab}</span> tier for this cluster.
+                    No problems classified in the <span className="font-semibold text-slate-400">{activeTierTab}</span> tier for this archetype.
                   </div>
                 )}
               </div>

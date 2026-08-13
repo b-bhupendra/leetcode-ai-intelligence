@@ -79,7 +79,7 @@ export function App() {
     { id: 'analyzer', label: 'Company Classifier', icon: Sparkles },
     { id: 'copilot', label: 'Live MCP Copilot', icon: Radio, pulse: true },
     { id: 'scraper', label: 'Crawler Daemon', icon: Terminal },
-    { id: 'clusters', label: '30 Archetypes', icon: Layers }
+    { id: 'clusters', label: '15 Archetypes & Roadmap', icon: Layers }
   ];
 
   return (
@@ -98,11 +98,11 @@ export function App() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm text-slate-100 tracking-tight">LeetCode AI Intelligence</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-800/50">
-                  5-Tier Stratification
+                  15 Unified Archetypes
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
-                200 Companies • 30 Archetypes (Easy to Hard) • ChromaDB & SQLite
+                4 Core Paradigms • 15 Algorithmic Archetypes • 6-Phase Mastery Roadmap
               </span>
             </div>
           </div>
