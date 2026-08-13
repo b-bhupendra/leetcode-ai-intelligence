@@ -1,0 +1,17 @@
+# Python virtual environment & cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.log
+
+# Large raw extraction cache
+raw_company_data/
+raw_hf_data/
+*.jsonl
+
+# IDE & OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeetCode AI Intelligence & Continuous DSA Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #080c14;
+      --bg-surface: #0f172a;
+      --bg-surface-elevated: #1e293b;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --bg-card-hover: rgba(30, 41, 59, 0.9);
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-focus: #6366f1;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-light: rgba(99, 102, 241, 0.15);
+      --accent-cyan: #06b6d4;
+      --accent-purple: #a855f7;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #06b6d4 100%);
+      --text-main: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --easy: #10b981;
+      --medium: #f59e0b;
+      --hard: #ef4444;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.5;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(6, 182, 212, 0.06) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    /* Top Navigation Bar */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 2rem;
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+      text-decoration: none;
+    }
+
+    .brand-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      background: var(--primary-light);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(15, 23, 42, 0.8);
+      padding: 0.3rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .nav-tab-btn {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .nav-tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+    }
+
+    .nav-stats {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .stat-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+    .stat-chip strong { color: var(--text-main); }
+
+    .crawler-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      cursor: pointer;
+    }
+    .crawler-indicator.inactive {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    .copilot-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-sm);
+      background: rgba(168, 85, 247, 0.12);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      color: #c084fc;
+      cursor: pointer;
+    }
+
+    /* Main Container */
+    .main-content {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .tab-view { display: none; }
+    .tab-view.active { display: block; animation: fadeIn 0.2s ease-out; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards & Containers */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 1.25rem;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .filter-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input, select, textarea {
+      background: rgba(8, 12, 20, 0.85);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn {
+      padding: 0.65rem 1.25rem;
+      background: var(--primary);
+      border: none;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-gradient {
+      background: var(--accent-gradient);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      transform: none;
+    }
+
+    /* Sub Tabs for Explorer */
+    .sub-tabs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.5rem;
+    }
+
+    .sub-tabs {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .sub-tab-link {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding-bottom: 0.5rem;
+      position: relative;
+      transition: color 0.15s;
+    }
+    .sub-tab-link.active {
+      color: var(--text-main);
+    }
+    .sub-tab-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--accent-cyan);
+    }
+
+    /* Problem Grid */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 1rem;
+    }
+
+    .problem-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+    .problem-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .problem-card.similar-card {
+      border-left: 3px solid var(--accent-cyan);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+
+    .problem-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1.3;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-easy { background: rgba(16, 185, 129, 0.15); color: var(--easy); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-medium { background: rgba(245, 158, 11, 0.15); color: var(--medium); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-hard { background: rgba(239, 68, 68, 0.15); color: var(--hard); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-tag { background: rgba(255, 255, 255, 0.05); color: #cbd5e1; border: 1px solid var(--border-subtle); font-weight: 500; text-transform: none; }
+    .badge-sim { background: rgba(6, 182, 212, 0.15); color: #22d3ee; font-weight: 700; }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.6rem;
+    }
+
+    .card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.85rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .quick-platforms {
+      display: flex;
+      gap: 0.4rem;
+    }
+    .platform-icon {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.35rem;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .platform-icon:hover {
+      background: rgba(99, 102, 241, 0.2);
+      color: #fff;
+    }
+
+    /* Live AI Copilot Banner / Feed */
+    .copilot-feed {
+      background: rgba(168, 85, 247, 0.08);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Slide-Over Drawer (Inspector) */
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .drawer-overlay.active { display: block; opacity: 1; }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: -700px;
+      width: 700px;
+      max-width: 95vw;
+      height: 100vh;
+      background: #0f172a;
+      border-left: 1px solid var(--border-subtle);
+      z-index: 101;
+      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    .drawer.active { right: 0; }
+
+    .drawer-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .drawer-close {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .drawer-close:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+
+    .drawer-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* 5 Cross-Platform Buttons Grid in Drawer */
+    .platforms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .platform-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.65rem 0.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+    .platform-btn:hover {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: #818cf8;
+      color: #fff;
+      transform: translateY(-2px);
+    }
+    .platform-btn .p-icon { font-size: 1.1rem; margin-bottom: 0.25rem; }
+
+    /* Code Block in Drawer */
+    .code-box {
+      background: #080c14;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    /* Live Log Table */
+    .log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .log-table th, .log-table td {
+      padding: 0.65rem 0.85rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .log-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+
+    /* Progress bar */
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 0.35rem;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-gradient);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .loading-inline {
+      display: none;
+      color: var(--accent-cyan);
+      font-size: 0.88rem;
+    }
+    .loading-inline.active { display: inline-block; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="navbar">
+    <a href="#" class="nav-brand">
+      <span>⚡</span> LeetCode AI Intelligence
+      <span class="brand-badge">Two-Way MCP Hub</span>
+    </a>
+
+    <div class="nav-tabs">
+      <button class="nav-tab-btn active" id="btn-tab-explorer" onclick="showTab('explorer')">
+        <span>🎯</span> Problem Explorer
+      </button>
+      <button class="nav-tab-btn" id="btn-tab-analyzer" onclick="showTab('analyzer')">
+        <span>🧠</span> AI Analyzer
+      </button>
+      <button class="nav-tab-btn" id="btn-tab-copilot" onclick="showTab('copilot')">
+        <span>🤖</span> MCP Copilot Stream
+      </button>
+      <button class="nav-tab-btn" id="btn-tab-scraper" onclick="showTab('scraper')">
+        <span>🔄</span> Scraper & Ingestion
+      </button>
+      <button class="nav-tab-btn" id="btn-tab-clusters" onclick="showTab('clusters')">
+        <span>🌐</span> Archetype Clusters
+      </button>
+    </div>
+
+    <div class="nav-stats">
+      <div class="stat-chip">📚 <strong id="stat-total-probs">2,870</strong> Problems</div>
+      <div class="copilot-indicator" id="copilot-pill" onclick="showTab('copilot')">
+        <span>✨</span> <span id="copilot-status-text">MCP Bridge Live</span>
+      </div>
+      <div class="crawler-indicator" id="crawler-status-pill" onclick="toggleCrawlerFromNav()">
+        <span id="crawler-dot">🟢</span> <span id="crawler-text">Crawler Active</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Views -->
+  <div class="main-content">
+
+    <!-- VIEW 1: Problem Explorer & Interview Radar -->
+    <div class="tab-view active" id="view-explorer">
+      <!-- Search & Filters -->
+      <div class="filter-bar">
+        <div class="filter-group" style="flex: 2; min-width: 240px;">
+          <label class="filter-label" for="search-input">Search Problems / Concepts</label>
+          <input type="text" id="search-input" placeholder="Search by title, keyword, or slug..." oninput="debounceSearch()">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="filter-company">Company</label>
+          <select id="filter-company" onchange="runFilter()">
+            <option value="">-- All Companies --</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="filter-diff">Difficulty</label>
+          <select id="filter-diff" onchange="runFilter()">
+            <option value="">-- Any Difficulty --</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="filter-topic">Topic</label>
+          <select id="filter-topic" onchange="runFilter()">
+            <option value="">-- Any Topic --</option>
+          </select>
+        </div>
+        <div class="filter-group" style="max-width: 150px;">
+          <label class="filter-label" for="filter-timeframe">Timeframe</label>
+          <select id="filter-timeframe" onchange="runFilter()">
+            <option value="">All-Time</option>
+            <option value="6months">6 Months</option>
+            <option value="1year">1 Year</option>
+            <option value="2year">2 Years</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Sub Tabs: Direct vs Similar Unasked -->
+      <div class="sub-tabs-header">
+        <div class="sub-tabs">
+          <div class="sub-tab-link active" id="subtab-direct" onclick="switchExplorerSubTab('direct')">
+            🎯 Directly Asked Questions (<span id="count-direct">0</span>)
+          </div>
+          <div class="sub-tab-link" id="subtab-similar" onclick="switchExplorerSubTab('similar')">
+            💡 Similar High-Probability Unasked (<span id="count-similar">0</span>)
+          </div>
+        </div>
+        <div id="filter-spinner" class="loading-inline">Filtering...</div>
+      </div>
+
+      <!-- Problem Cards Grid -->
+      <div id="explorer-direct-grid" class="problem-grid"></div>
+      <div id="explorer-similar-grid" class="problem-grid" style="display: none;"></div>
+    </div>
+
+    <!-- VIEW 2: AI Problem Analyzer & Classifier -->
+    <div class="tab-view" id="view-analyzer">
+      <div class="card">
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; margin-bottom: 0.5rem;">
+          <span>🧠</span> Autonomous Problem Auto-Classifier & Cross-Platform Resolver
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1.25rem;">
+          Paste any problem text or requirements. The ML model automatically predicts difficulty, topic tags, company probabilities, and resolves 5 cross-platform alternatives.
+        </p>
+
+        <!-- Presets -->
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center;">
+          <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">Presets:</span>
+          <button class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.8rem;" onclick="loadPreset('dijkstra')">Graph Shortest Path</button>
+          <button class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.8rem;" onclick="loadPreset('sliding_window')">Sliding Window Substring</button>
+          <button class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.8rem;" onclick="loadPreset('knapsack')">0/1 Knapsack DP</button>
+          <button class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.8rem;" onclick="loadPreset('lru')">LRU Cache Design</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label class="filter-label" for="analyzer-title">Problem Title / Slug</label>
+            <input type="text" id="analyzer-title" placeholder="e.g. minimum-cost-network-spanning-tree">
+          </div>
+          <div>
+            <label class="filter-label" for="analyzer-diff">Difficulty (Optional)</label>
+            <select id="analyzer-diff">
+              <option value="Auto">Auto-Detect with ML</option>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label class="filter-label" for="analyzer-desc">Problem Statement / Specifications</label>
+          <textarea id="analyzer-desc" style="min-height: 140px;" placeholder="Paste the problem description or algorithmic requirements here..."></textarea>
+        </div>
+
+        <button class="btn btn-gradient" onclick="runAnalyzer()">
+          <span>⚡</span> Analyze & Classify Problem
+        </button>
+        <span id="analyzer-spinner" class="loading-inline" style="margin-left: 0.75rem;">Classifying problem features...</span>
+
+        <!-- Analyzer Result Container -->
+        <div id="analyzer-results" style="display: none; margin-top: 1.5rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div>
+              <div style="background: rgba(8, 12, 20, 0.7); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 1rem;">
+                <h4 style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">Archetype Cluster</h4>
+                <div id="res-cluster-title" style="font-size: 1.15rem; font-weight: 700; color: #38bdf8; margin-bottom: 0.5rem;"></div>
+                <div id="res-tags-row" class="tag-row"></div>
+              </div>
+
+              <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">Predicted Target Companies</h4>
+              <div id="res-companies-list"></div>
+            </div>
+
+            <div>
+              <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">5 Cross-Platform Alternatives</h4>
+              <div id="res-platforms-grid" class="platforms-grid" style="margin-bottom: 1.25rem;"></div>
+
+              <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">5 Algorithmically Similar LeetCode Counterparts</h4>
+              <div id="res-similar-counterparts" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: Two-Way MCP Copilot Live Stream -->
+    <div class="tab-view" id="view-copilot">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem;">
+            <span>🤖</span> Two-Way MCP Copilot & Real-Time Sync
+          </h2>
+          <span class="badge badge-tag" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">SSE Live Connected</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1.25rem;">
+          When an LLM agent (Antigravity, Claude, Cursor) calls <code>push_to_web_dashboard</code> or performs adaptive stepping, the recommendation and code review stream live into this view.
+        </p>
+
+        <!-- Submit Query to Queue Card -->
+        <div style="background: rgba(8, 12, 20, 0.6); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 1.25rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: #c084fc; margin-bottom: 0.4rem;">
+            <span>⚡</span> Submit Query to 5-Second Autonomous Worker
+          </h3>
+          <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+            All queries are persisted to <code>user_queries_queue.jsonl</code>. The background worker evaluates them every 5 seconds using MCP intelligence tools and streams solutions back live.
+          </p>
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <input type="text" id="queue-query-input" placeholder="e.g. 'How to optimize two-sum for space?' or custom prompt...">
+            <input type="text" id="queue-problem-slug" placeholder="Problem slug (optional, e.g. two-sum)">
+            <select id="queue-rating-select">
+              <option value="moderate">Rating: Moderate</option>
+              <option value="struggled">Rating: Struggled (Step Down)</option>
+              <option value="mastered">Rating: Mastered (Step Up)</option>
+            </select>
+          </div>
+          <button class="btn btn-gradient" style="font-size: 0.85rem; padding: 0.5rem 1rem;" onclick="submitQueryToQueue()">
+            <span>🚀</span> Enqueue Query for 5s Agent
+          </button>
+          <span id="queue-submit-status" style="font-size: 0.8rem; color: var(--accent-cyan); margin-left: 0.75rem;"></span>
+        </div>
+
+        <!-- Live Stream Feed Container -->
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;"><span>📡</span> Real-Time Broadcast Feed</h3>
+        <div id="copilot-events-container" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Populated dynamically by SSE -->
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 4: Live Scraping & Continuous Ingestion Hub -->
+    <div class="tab-view" id="view-scraper">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+        <div class="card">
+          <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem;">
+            <span>📥</span> On-Demand Problem Scraper
+          </h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+            Ingest any LeetCode question by URL or slug. Automatically classifies difficulty, topics, companies, and saves to database.
+          </p>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <input type="text" id="single-scrape-input" placeholder="e.g. coin-change-2 or full URL" style="flex: 1;">
+            <button class="btn" onclick="runSingleScrape()">Scrape & Ingest</button>
+          </div>
+          <div id="single-scrape-status" style="font-size: 0.85rem; color: var(--accent-cyan);"></div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem;">
+            <span>🤖</span> Continuous Autonomous Crawler
+          </h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+            Autonomous background daemon that crawls problem pools, auto-classifies, and continuously expands the local database.
+          </p>
+          <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(8, 12, 20, 0.6); padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            <div>
+              <div style="font-weight: 600; font-size: 0.9rem;" id="crawler-hub-status">Daemon Status: Active</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);"><span id="crawler-pool-count">58</span> discovery candidates in queue</div>
+            </div>
+            <button class="btn btn-secondary" id="btn-toggle-crawler" onclick="toggleCrawler()">Pause Crawler</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3 style="font-size: 1.15rem; font-weight: 700;"><span>📋</span> Live Ingestion & Auto-Classification Activity</h3>
+          <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="refreshCrawlerStatus()">Refresh Log</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Problem Slug</th>
+                <th>Difficulty</th>
+                <th>Assigned Archetype</th>
+                <th>Auto-Predicted Companies</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ingestion-log-tbody">
+              <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted);">No background crawl events recorded yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 5: Archetype Clusters -->
+    <div class="tab-view" id="view-clusters">
+      <div class="card">
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; margin-bottom: 0.5rem;">
+          <span>🌐</span> 30 Algorithmic Archetype Clusters
+        </h2>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1.25rem;">
+          Click any cluster to immediately filter all problems in the Explorer matching that algorithmic pattern.
+        </p>
+        <div id="clusters-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Slide-Over Problem Inspector Drawer -->
+  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span class="badge" id="drawer-diff-badge">Medium</span>
+        <span class="badge badge-tag" id="drawer-cluster-badge">General</span>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕ Close</button>
+    </div>
+    <div class="drawer-body">
+      <!-- Title -->
+      <div>
+        <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff;" id="drawer-title">Problem Title</h2>
+        <div class="tag-row" id="drawer-tags-row"></div>
+      </div>
+
+      <!-- 5 Cross-Platform Buttons -->
+      <div>
+        <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+          5 Cross-Platform Alternatives
+        </h4>
+        <div class="platforms-grid" id="drawer-platforms-grid"></div>
+      </div>
+
+      <!-- Company Breakdown -->
+      <div id="drawer-companies-section">
+        <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.4rem;">
+          Target Tech Companies
+        </h4>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);" id="drawer-companies-text"></div>
+      </div>
+
+      <!-- Problem Description -->
+      <div>
+        <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+          Problem Statement
+        </h4>
+        <div id="drawer-desc" style="font-size: 0.9rem; color: #cbd5e1; line-height: 1.6; max-height: 250px; overflow-y: auto; background: rgba(8, 12, 20, 0.6); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);"></div>
+      </div>
+
+      <!-- Solution Review & Adaptive Stepper Section -->
+      <div style="background: rgba(168, 85, 247, 0.06); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: var(--radius-md); padding: 1rem;">
+        <h4 style="font-size: 0.9rem; font-weight: 700; color: #c084fc; margin-bottom: 0.4rem;">
+          <span>🤖</span> AI Code Review & Adaptive Difficulty Stepper
+        </h4>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+          Paste your candidate solution below to evaluate time complexity, patterns, and dynamically step up or step down difficulty.
+        </p>
+        <textarea id="candidate-code-input" style="width: 100%; min-height: 100px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; margin-bottom: 0.5rem;" placeholder="# Write or paste your solution here..."></textarea>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <select id="candidate-rating-select" style="font-size: 0.82rem; padding: 0.4rem 0.6rem;">
+            <option value="moderate">Rating: Moderate (Find Similar)</option>
+            <option value="struggled">Rating: Struggled (Step Down)</option>
+            <option value="mastered">Rating: Mastered (Step Up)</option>
+          </select>
+          <button class="btn btn-gradient" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;" onclick="submitCandidateCodeReview()">
+            <span>⚡</span> Review & Step
+          </button>
+        </div>
+        <div id="ai-code-review-output" style="display: none; margin-top: 0.75rem; font-size: 0.85rem;"></div>
+      </div>
+
+      <!-- Starter Code -->
+      <div id="drawer-code-section">
+        <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+          Python Solution Boilerplate
+        </h4>
+        <pre class="code-box" id="drawer-code"></pre>
+      </div>
+
+      <!-- 5 Similar Counterparts -->
+      <div>
+        <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+          5 Algorithmically Similar LeetCode Counterparts
+        </h4>
+        <div id="drawer-similar-list" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let metadata = {};
+    let searchTimeout = null;
+    let currentDrawerSlug = "";
+
+    const PRESETS = {
+      dijkstra: {
+        title: "network-delay-time",
+        diff: "Medium",
+        desc: "You are given a network of n nodes labeled from 1 to n. You are also given times, a list of travel times as directed edges times[i] = [ui, vi, wi]. Return the minimum time it takes for all the n nodes to receive the signal using Dijkstra's shortest path algorithm with Priority Queue."
+      },
+      sliding_window: {
+        title: "longest-substring-without-repeating-characters",
+        diff: "Medium",
+        desc: "Given a string s, find the length of the longest substring without repeating characters using a sliding window and two pointers technique."
+      },
+      knapsack: {
+        title: "coin-change",
+        diff: "Medium",
+        desc: "You are given an integer array coins representing coins of different denominations and an integer amount. Return the fewest number of coins that you need to make up that amount using 1D/2D Dynamic Programming."
+      },
+      lru: {
+        title: "lru-cache",
+        diff: "Medium",
+        desc: "Design a data structure that follows the constraints of a Least Recently Used (LRU) cache with get and put operations in O(1) time complexity using Doubly Linked List and Hash Map."
+      }
+    };
+
+    function loadPreset(key) {
+      const p = PRESETS[key];
+      if (!p) return;
+      document.getElementById("analyzer-title").value = p.title;
+      document.getElementById("analyzer-diff").value = p.diff;
+      document.getElementById("analyzer-desc").value = p.desc;
+    }
+
+    function showTab(tabId) {
+      document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
+      document.querySelectorAll(".nav-tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById(`view-${tabId}`).classList.add("active");
+      document.getElementById(`btn-tab-${tabId}`).classList.add("active");
+    }
+
+    function switchExplorerSubTab(subTab) {
+      document.getElementById("subtab-direct").classList.remove("active");
+      document.getElementById("subtab-similar").classList.remove("active");
+      document.getElementById(`subtab-${subTab}`).classList.add("active");
+
+      if (subTab === "direct") {
+        document.getElementById("explorer-direct-grid").style.display = "grid";
+        document.getElementById("explorer-similar-grid").style.display = "none";
+      } else {
+        document.getElementById("explorer-direct-grid").style.display = "none";
+        document.getElementById("explorer-similar-grid").style.display = "grid";
+      }
+    }
+
+    async function initApp() {
+      try {
+        const resp = await fetch("/api/metadata");
+        metadata = await resp.json();
+
+        document.getElementById("stat-total-probs").textContent = metadata.total_problems.toLocaleString();
+
+        // Populate dropdowns
+        const compSelect = document.getElementById("filter-company");
+        metadata.companies.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c;
+          opt.textContent = c.toUpperCase();
+          compSelect.appendChild(opt);
+        });
+
+        const topicSelect = document.getElementById("filter-topic");
+        metadata.topics.forEach(t => {
+          const opt = document.createElement("option");
+          opt.value = t;
+          opt.textContent = t;
+          topicSelect.appendChild(opt);
+        });
+
+        renderClustersTab(metadata.clusters);
+        updateCrawlerStatus(metadata.crawler_running, metadata.total_crawled);
+
+        // Run default filter
+        compSelect.value = "google";
+        topicSelect.value = "Graph";
+        runFilter();
+
+        // Connect SSE Stream for Reverse MCP
+        initEventStream();
+      } catch (err) {
+        console.error("Init error:", err);
+      }
+    }
+
+    /* SSE Stream Connection */
+    function initEventStream() {
+      const eventSource = new EventSource("/api/agent/stream");
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          addCopilotEventCard(data);
+        } catch (e) {
+          // ping or non-json
+        }
+      };
+
+      eventSource.onerror = () => {
+        document.getElementById("copilot-status-text").textContent = "Reconnecting...";
+      };
+
+      eventSource.onopen = () => {
+        document.getElementById("copilot-status-text").textContent = "MCP Bridge Live";
+      };
+    }
+
+    function addCopilotEventCard(data) {
+      const container = document.getElementById("copilot-events-container");
+      const card = document.createElement("div");
+      card.className = "card";
+      card.style.background = "rgba(15, 23, 42, 0.9)";
+      card.style.borderLeft = "4px solid #a855f7";
+      card.style.padding = "1.2rem";
+
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <div style="font-weight: 700; font-size: 1rem; color: #fff;">
+            <span>🤖</span> ${data.title}
+          </div>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">${data.timestamp}</span>
+        </div>
+        <div style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 0.75rem;">
+          ${data.content}
+        </div>
+        ${data.problem_slug ? `
+          <button class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.3rem 0.6rem;" onclick="openDrawer('${data.problem_slug}')">
+            View Problem '${data.problem_slug}'
+          </button>
+        ` : ''}
+      `;
+
+      container.insertBefore(card, container.firstChild);
+    }
+
+    async function sendTestBroadcast() {
+      const input = document.getElementById("mock-broadcast-input");
+      const val = input.value.trim() || "Adaptive Stepping: Recommended 'course-schedule-iv' based on graph mastery.";
+      
+      try {
+        await fetch("/api/agent/broadcast", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Live Agent Recommendation",
+            action_type: "adaptive_step",
+            content: val,
+            problem_slug: "course-schedule-iv"
+          })
+        });
+        input.value = "";
+      } catch (err) {
+        alert("Broadcast error: " + err);
+      }
+    }
+
+    function debounceSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(runFilter, 300);
+    }
+
+    async function runFilter() {
+      const spinner = document.getElementById("filter-spinner");
+      spinner.classList.add("active");
+
+      const comp = document.getElementById("filter-company").value;
+      const diff = document.getElementById("filter-diff").value;
+      const topic = document.getElementById("filter-topic").value;
+      const tf = document.getElementById("filter-timeframe").value;
+      const query = document.getElementById("search-input").value;
+
+      try {
+        const resp = await fetch("/api/filter-recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            company: comp || null,
+            difficulty: diff || null,
+            topic: topic || null,
+            timeframe: tf || null,
+            search_query: query || null,
+            max_direct: 30,
+            max_similar: 20
+          })
+        });
+        const res = await resp.json();
+        if (res.status === "success") {
+          renderExplorerResults(res.data);
+        }
+      } catch (err) {
+        console.error("Filter failed:", err);
+      } finally {
+        spinner.classList.remove("active");
+      }
+    }
+
+    function renderExplorerResults(data) {
+      document.getElementById("count-direct").textContent = data.direct_count;
+      document.getElementById("count-similar").textContent = data.similar_unasked_count;
+
+      const directGrid = document.getElementById("explorer-direct-grid");
+      directGrid.innerHTML = "";
+      if (data.direct_problems.length === 0) {
+        directGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem; text-align: center; color: var(--text-muted);">No directly asked questions match the current filter. Check the Similar Unasked tab!</div>`;
+      } else {
+        data.direct_problems.forEach(p => {
+          directGrid.appendChild(createProblemCard(p, false));
+        });
+      }
+
+      const similarGrid = document.getElementById("explorer-similar-grid");
+      similarGrid.innerHTML = "";
+      if (data.similar_unasked_problems.length === 0) {
+        similarGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem; text-align: center; color: var(--text-muted);">No similar unasked questions found.</div>`;
+      } else {
+        data.similar_unasked_problems.forEach(p => {
+          similarGrid.appendChild(createProblemCard(p, true));
+        });
+      }
+    }
+
+    function createProblemCard(p, isSimilar) {
+      const card = document.createElement("div");
+      card.className = `problem-card ${isSimilar ? 'similar-card' : ''}`;
+      card.onclick = () => openDrawer(p.task_id || p.question_id);
+
+      const diffBadge = getDiffBadge(p.difficulty);
+      const simBadge = isSimilar ? `<span class="badge badge-sim">${p.similarity_score}% Match</span>` : '';
+      const freqBadge = p.frequency ? `<span style="color: #a5b4fc; font-size: 0.75rem; font-weight: 600;">🔥 ${p.frequency}</span>` : '';
+
+      const tags = (p.topic_tags || []).slice(0, 3).map(t => `<span class="badge badge-tag">${t}</span>`).join('');
+      
+      const alts = p.platform_alternatives || [];
+      const altIcons = alts.map(a => `<a href="${a.url}" target="_blank" onclick="event.stopPropagation()" class="platform-icon" title="${a.name}">${a.badge.split(' ')[0]}</a>`).join('');
+
+      card.innerHTML = `
+        <div>
+          <div class="card-top">
+            <div class="problem-title">${p.question_id ? '#' + p.question_id + ' ' : ''}${formatTitle(p.task_id)}</div>
+            <div style="display: flex; gap: 0.3rem; align-items: center;">${diffBadge}${simBadge}</div>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--accent-cyan); margin-bottom: 0.4rem;">
+            ${p.cluster_title}
+          </div>
+          <div class="tag-row">${tags}</div>
+        </div>
+        <div class="card-bottom">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            ${freqBadge}
+            <span>${p.companies_count ? p.companies_count + ' companies' : ''}</span>
+          </div>
+          <div class="quick-platforms">
+            ${altIcons}
+          </div>
+        </div>
+      `;
+      return card;
+    }
+
+    function formatTitle(slug) {
+      if (!slug) return "Problem";
+      return slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    function getDiffBadge(diff) {
+      const d = (diff || "Medium").toLowerCase();
+      if (d === "easy") return `<span class="badge badge-easy">Easy</span>`;
+      if (d === "hard") return `<span class="badge badge-hard">Hard</span>`;
+      return `<span class="badge badge-medium">Medium</span>`;
+    }
+
+    /* Drawer Inspector */
+    async function openDrawer(identifier) {
+      const overlay = document.getElementById("drawer-overlay");
+      const drawer = document.getElementById("drawer");
+
+      currentDrawerSlug = identifier;
+      overlay.classList.add("active");
+      drawer.classList.add("active");
+
+      document.getElementById("drawer-title").textContent = "Loading problem details...";
+      document.getElementById("drawer-tags-row").innerHTML = "";
+      document.getElementById("drawer-platforms-grid").innerHTML = "Loading...";
+      document.getElementById("ai-code-review-output").style.display = "none";
+
+      try {
+        const resp = await fetch(`/api/problem/${identifier}`);
+        const res = await resp.json();
+        if (res.status === "success") {
+          const p = res.data;
+          currentDrawerSlug = p.task_id;
+          document.getElementById("drawer-title").textContent = `${p.question_id ? '#' + p.question_id + ' ' : ''}${formatTitle(p.task_id)}`;
+          document.getElementById("drawer-diff-badge").className = `badge badge-${(p.difficulty||'medium').toLowerCase()}`;
+          document.getElementById("drawer-diff-badge").textContent = p.difficulty || "Medium";
+          document.getElementById("drawer-cluster-badge").textContent = p.cluster_title || "General";
+
+          // Tags
+          document.getElementById("drawer-tags-row").innerHTML = (p.topic_tags || []).map(t => `<span class="badge badge-tag">${t}</span>`).join('');
+
+          // 5 Cross-Platform Buttons
+          const platGrid = document.getElementById("drawer-platforms-grid");
+          platGrid.innerHTML = "";
+          (p.platform_alternatives || []).forEach(a => {
+            platGrid.innerHTML += `
+              <a href="${a.url}" target="_blank" class="platform-btn">
+                <span class="p-icon">${a.badge.split(' ')[0]}</span>
+                <span>${a.platform}</span>
+              </a>
+            `;
+          });
+
+          // Companies
+          const compText = (p.companies || []).length > 0
+            ? `Asked by <strong>${p.companies.length} companies</strong>: ${(p.companies||[]).slice(0, 10).join(', ')}`
+            : "No recorded company interview questions yet.";
+          document.getElementById("drawer-companies-text").innerHTML = compText;
+
+          // Description
+          document.getElementById("drawer-desc").innerHTML = p.problem_description || "No description provided.";
+
+          // Code
+          if (p.starter_code) {
+            document.getElementById("drawer-code-section").style.display = "block";
+            document.getElementById("drawer-code").textContent = p.starter_code;
+          } else {
+            document.getElementById("drawer-code-section").style.display = "none";
+          }
+
+          // 5 Similar Counterparts
+          const simList = document.getElementById("drawer-similar-list");
+          simList.innerHTML = "";
+          (p.similar_counterparts || []).forEach(sp => {
+            simList.innerHTML += `
+              <div class="problem-card" style="padding: 0.75rem;" onclick="openDrawer('${sp.task_id}')">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <strong style="font-size: 0.9rem; color: #fff;">${formatTitle(sp.task_id)}</strong>
+                  <span class="badge badge-sim">${sp.similarity_score}% Sim</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  ${getDiffBadge(sp.difficulty)} • ${sp.cluster_title}
+                </div>
+              </div>
+            `;
+          });
+        }
+      } catch (err) {
+        console.error("Drawer error:", err);
+      }
+    }
+
+    function closeDrawer() {
+      document.getElementById("drawer-overlay").classList.remove("active");
+      document.getElementById("drawer").classList.remove("active");
+    }
+
+    /* Candidate Solution Review & Stepper */
+    async function submitCandidateCodeReview() {
+      const code = document.getElementById("candidate-code-input").value;
+      const rating = document.getElementById("candidate-rating-select").value;
+      const outputDiv = document.getElementById("ai-code-review-output");
+
+      if (!code.trim()) {
+        alert("Please write or paste your solution code.");
+        return;
+      }
+
+      outputDiv.style.display = "block";
+      outputDiv.innerHTML = "<em>Analyzing solution structure and computing adaptive steps...</em>";
+
+      try {
+        const resp = await fetch("/api/agent/analyze-solution", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            problem_slug: currentDrawerSlug,
+            candidate_code: code,
+            performance_rating: rating
+          })
+        });
+        const res = await resp.json();
+        if (res.status === "success") {
+          const d = res.data;
+          const stepsHtml = d.recommended_next_problems.map(np => `
+            <div style="background: rgba(8,12,20,0.6); padding: 0.5rem; border-radius: 4px; margin-top: 0.4rem; display: flex; justify-content: space-between; align-items: center;">
+              <span><strong>${formatTitle(np.task_id)}</strong> (${np.difficulty})</span>
+              <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="openDrawer('${np.task_id}')">Open</button>
+            </div>
+          `).join('');
+
+          outputDiv.innerHTML = `
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.5rem;">
+              <div style="color: #38bdf8; font-weight: 700; margin-bottom: 0.25rem;">✨ AI Review: ${d.stepping_intent}</div>
+              <div style="color: var(--text-muted); font-size: 0.8rem;">Detected Patterns: <strong>${d.detected_patterns.join(', ') || 'Standard Iterative'}</strong></div>
+              <div style="margin-top: 0.5rem; font-weight: 600; font-size: 0.82rem; color: #fff;">Adaptive Follow-ups:</div>
+              ${stepsHtml}
+            </div>
+          `;
+        }
+      } catch (err) {
+        outputDiv.innerHTML = `<span style="color: #f87171;">Review error: ${err}</span>`;
+      }
+    }
+
+    /* AI Analyzer */
+    async function runAnalyzer() {
+      const title = document.getElementById("analyzer-title").value.trim();
+      const diffSelect = document.getElementById("analyzer-diff").value;
+      const desc = document.getElementById("analyzer-desc").value.trim();
+      const spinner = document.getElementById("analyzer-spinner");
+      const resultsContainer = document.getElementById("analyzer-results");
+
+      if (!desc && !title) {
+        alert("Please enter a problem title or description.");
+        return;
+      }
+
+      spinner.classList.add("active");
+      resultsContainer.style.display = "none";
+
+      try {
+        const resp = await fetch("/api/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: title,
+            description: desc,
+            difficulty: diffSelect === "Auto" ? "Medium" : diffSelect,
+            top_k: 6
+          })
+        });
+        const res = await resp.json();
+        if (res.status === "success") {
+          const data = res.data;
+          
+          document.getElementById("res-cluster-title").textContent = data.assigned_cluster.cluster_title;
+          document.getElementById("res-tags-row").innerHTML = (data.assigned_cluster.top_tags || []).map(t => `<span class="badge badge-tag">${t}</span>`).join('');
+
+          // Companies
+          const compList = document.getElementById("res-companies-list");
+          compList.innerHTML = "";
+          data.predicted_companies.forEach((item, i) => {
+            compList.innerHTML += `
+              <div style="background: rgba(8,12,20,0.6); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); margin-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem;">
+                  <span>#${i+1} ${item.company.toUpperCase()}</span>
+                  <span style="color: var(--accent-cyan);">${item.confidence_score}%</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" style="width: ${item.confidence_score}%;"></div>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">${item.rationale}</div>
+              </div>
+            `;
+          });
+
+          // 5 Platform Alternatives
+          const platGrid = document.getElementById("res-platforms-grid");
+          platGrid.innerHTML = "";
+          (data.platform_alternatives || []).forEach(a => {
+            platGrid.innerHTML += `
+              <a href="${a.url}" target="_blank" class="platform-btn">
+                <span class="p-icon">${a.badge.split(' ')[0]}</span>
+                <span>${a.platform}</span>
+              </a>
+            `;
+          });
+
+          // 5 Similar Counterparts
+          const simDiv = document.getElementById("res-similar-counterparts");
+          simDiv.innerHTML = "";
+          (data.similar_existing_problems || []).forEach(sp => {
+            simDiv.innerHTML += `
+              <div class="problem-card" style="padding: 0.75rem;" onclick="openDrawer('${sp.task_id}')">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <strong style="font-size: 0.9rem; color: #fff;">${formatTitle(sp.task_id)}</strong>
+                  <span class="badge badge-sim">${sp.similarity_score}% Sim</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  ${getDiffBadge(sp.difficulty)} • ${sp.cluster_title}
+                </div>
+              </div>
+            `;
+          });
+
+          resultsContainer.style.display = "block";
+        }
+      } catch (err) {
+        alert("Analyzer error: " + err);
+      } finally {
+        spinner.classList.remove("active");
+      }
+    }
+
+    /* Single Scrape */
+    async function runSingleScrape() {
+      const input = document.getElementById("single-scrape-input").value.trim();
+      if (!input) return;
+      const statusDiv = document.getElementById("single-scrape-status");
+      statusDiv.textContent = "Scraping, auto-classifying and indexing problem...";
+
+      try {
+        const resp = await fetch("/api/scrape-and-ingest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug_or_url: input })
+        });
+        const res = await resp.json();
+        if (res.status === "success") {
+          statusDiv.textContent = `✅ ${res.message} (Assigned Archetype: ${res.problem.cluster_title})`;
+          refreshCrawlerStatus();
+        } else {
+          statusDiv.textContent = `ℹ️ ${res.message || 'Already present or network error.'}`;
+        }
+      } catch (err) {
+        statusDiv.textContent = "Error: " + err;
+      }
+    }
+
+    async function submitQueryToQueue() {
+      const queryText = document.getElementById("queue-query-input").value.trim();
+      const slug = document.getElementById("queue-problem-slug").value.trim();
+      const rating = document.getElementById("queue-rating-select").value;
+      const statusSpan = document.getElementById("queue-submit-status");
+
+      if (!queryText && !slug) {
+        alert("Please enter a question or problem slug.");
+        return;
+      }
+
+      statusSpan.textContent = "Enqueueing query...";
+
+      try {
+        const resp = await fetch("/api/agent/submit-query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query_text: queryText,
+            problem_slug: slug,
+            rating: rating,
+            query_type: slug ? "code_review" : "general"
+          })
+        });
+        const res = await resp.json();
+        if (res.status === "queued") {
+          statusSpan.textContent = `✅ Enqueued query #${res.entry.id}. Processing in 5s...`;
+          document.getElementById("queue-query-input").value = "";
+          setTimeout(() => { statusSpan.textContent = ""; }, 6000);
+        }
+      } catch (err) {
+        statusSpan.textContent = "Error: " + err;
+      }
+    }
+
+    /* Crawler Toggle */
+    async function toggleCrawler() {
+      const isRunning = document.getElementById("crawler-status-pill").textContent.includes("Active");
+      try {
+        const resp = await fetch("/api/crawler/toggle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enable: !isRunning })
+        });
+        const res = await resp.json();
+        updateCrawlerStatus(res.crawler_running, 0);
+      } catch (err) {
+        console.error("Toggle error:", err);
+      }
+    }
+
+    function toggleCrawlerFromNav() {
+      toggleCrawler();
+    }
+
+    async function refreshCrawlerStatus() {
+      try {
+        const resp = await fetch("/api/crawler/status");
+        const res = await resp.json();
+        if (res.status === "success") {
+          const d = res.data;
+          updateCrawlerStatus(d.is_running, d.total_ingested);
+          document.getElementById("crawler-pool-count").textContent = d.pool_remaining;
+          document.getElementById("stat-total-probs").textContent = d.total_problems_in_db.toLocaleString();
+
+          // Render log table
+          const tbody = document.getElementById("ingestion-log-tbody");
+          tbody.innerHTML = "";
+          if (d.recent_logs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No background crawl events recorded yet.</td></tr>`;
+          } else {
+            d.recent_logs.slice().reverse().forEach(log => {
+              tbody.innerHTML += `
+                <tr>
+                  <td>${log.timestamp}</td>
+                  <td><strong>${log.task_id}</strong></td>
+                  <td>${getDiffBadge(log.difficulty)}</td>
+                  <td><span class="badge badge-tag">${log.assigned_cluster}</span></td>
+                  <td>${(log.top_companies || []).join(', ')}</td>
+                  <td style="color: #34d399;">${log.status}</td>
+                </tr>
+              `;
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Log refresh error:", err);
+      }
+    }
+
+    function updateCrawlerStatus(isRunning, count) {
+      const pill = document.getElementById("crawler-status-pill");
+      const dot = document.getElementById("crawler-dot");
+      const text = document.getElementById("crawler-text");
+      const hubText = document.getElementById("crawler-hub-status");
+      const btn = document.getElementById("btn-toggle-crawler");
+
+      if (isRunning) {
+        pill.className = "crawler-indicator";
+        dot.textContent = "🟢";
+        text.textContent = "Crawler Active";
+        hubText.textContent = "Daemon Status: Active (Continuous Ingestion)";
+        btn.textContent = "Pause Crawler";
+      } else {
+        pill.className = "crawler-indicator inactive";
+        dot.textContent = "🔴";
+        text.textContent = "Crawler Paused";
+        hubText.textContent = "Daemon Status: Paused";
+        btn.textContent = "Start Crawler";
+      }
+    }
+
+    function renderClustersTab(clusters) {
+      const grid = document.getElementById("clusters-grid");
+      grid.innerHTML = "";
+      clusters.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.style.padding = "1rem";
+        div.style.cursor = "pointer";
+        div.onclick = () => {
+          document.getElementById("filter-topic").value = c.top_tags[0] || "";
+          showTab('explorer');
+          runFilter();
+        };
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <span class="badge badge-tag">Cluster #${c.cluster_id}</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">${c.size} problems</span>
+          </div>
+          <h4 style="font-family: 'Outfit', sans-serif; font-size: 1rem; color: #fff; margin-bottom: 0.4rem;">${c.title}</h4>
+          <div style="font-size: 0.75rem; color: var(--text-secondary);">
+            <strong>Tags:</strong> ${(c.top_tags || []).join(', ')}
+          </div>
+        `;
+        grid.appendChild(div);
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initApp();
+      setInterval(refreshCrawlerStatus, 15000);
+    });
+  </script>
+</body>
+</html>
