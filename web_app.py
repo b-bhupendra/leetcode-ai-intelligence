@@ -77,6 +77,16 @@ class PredictRequest(BaseModel):
     title: Optional[str] = ""
     description: str
     difficulty: Optional[str] = "Medium"
+    topic_tags: Optional[List[str]] = None
+    top_k: Optional[int] = 8
+
+
+class PatternPredictRequest(BaseModel):
+    title: Optional[str] = ""
+    description: str
+    top_k: Optional[int] = 5
+
+
 ALL_DIFFICULTY_TIERS = ["Easy", "Easy-Medium", "Medium", "Medium-Hard", "Hard"]
 
 
@@ -149,6 +159,20 @@ def predict_company(req: PredictRequest):
             difficulty=req.difficulty or "Medium",
             topic_tags=req.topic_tags or [],
             top_k=req.top_k or 8
+        )
+        return JSONResponse(content={"status": "success", "data": results})
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+
+@app.post("/api/predict/pattern")
+def predict_patterns(req: PatternPredictRequest):
+    """Predicts multi-label algorithmic patterns from problem description using NLP BCE classifier."""
+    try:
+        results = engine.predict_patterns(
+            text=req.description,
+            title=req.title or "",
+            top_k=req.top_k or 5
         )
         return JSONResponse(content={"status": "success", "data": results})
     except Exception as e:

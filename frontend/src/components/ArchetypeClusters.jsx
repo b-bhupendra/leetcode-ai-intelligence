@@ -16,7 +16,13 @@ import {
   CheckCircle2, 
   HelpCircle,
   Cpu,
-  BookOpen
+  BookOpen,
+  BrainCircuit,
+  Binary,
+  Send,
+  Loader2,
+  Terminal,
+  BookmarkCheck
 } from 'lucide-react';
 
 const clusterVariants = {
@@ -53,10 +59,16 @@ const paradigmIcons = {
 
 export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem, onFilterExplorerByCluster }) {
   const clusters = metadata.clusters || [];
-  const [viewMode, setViewMode] = useState('taxonomy'); // 'taxonomy' | 'roadmap'
+  const [viewMode, setViewMode] = useState('taxonomy'); // 'taxonomy' | 'roadmap' | 'classifier'
   const [selectedParadigm, setSelectedParadigm] = useState('All');
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [activeTierTab, setActiveTierTab] = useState('Easy-Medium');
+
+  // NLP Pattern Classifier State
+  const [classifierInput, setClassifierInput] = useState('');
+  const [classifierTitle, setClassifierTitle] = useState('');
+  const [isClassifying, setIsClassifying] = useState(false);
+  const [predictedPatterns, setPredictedPatterns] = useState(null);
 
   const paradigms = ['All', 'Linear Pointer Patterns', 'Linear Structures & Specialized Memory', 'Tree, Graph & Search Space Traversal', 'Optimization & State Space Paradigms'];
 
@@ -72,48 +84,102 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
     setActiveTierTab(firstNonEmpty);
   };
 
+  const handleClassifyProblem = async () => {
+    if (!classifierInput.trim()) return;
+    setIsClassifying(true);
+    try {
+      const res = await fetch('/api/predict/pattern', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: classifierTitle,
+          description: classifierInput,
+          top_k: 5
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setPredictedPatterns(data.data);
+      }
+    } catch (err) {
+      console.error("Pattern classification error:", err);
+    } finally {
+      setIsClassifying(false);
+    }
+  };
+
   const roadmapPhases = [
     {
-      phase: "Phase 1: Linear Pointer Mechanics",
+      phase: "Phase 1: Linear Traversals & Pointer Mechanics",
       weeks: "Weeks 1–2",
       goal: "Shift from O(N²) brute force to O(N) single-pass time complexity.",
+      mechanics: "Converging/diverging bounds, range queries, and subarray optimization.",
       archetypeIds: [0, 1, 2, 3],
-      keyTakeaways: "Master left/right monotonic convergence, sliding window expansion/contraction, and cumulative prefix lookup."
+      keyTakeaways: "Master left/right monotonic convergence, sliding window expansion/contraction, and cumulative prefix lookup.",
+      gfgLinks: [
+        { title: "GFG Arrays Data Structure", url: "https://www.geeksforgeeks.org/array-data-structure/" },
+        { title: "GFG Searching Algorithms", url: "https://www.geeksforgeeks.org/searching-algorithms/" }
+      ]
     },
     {
-      phase: "Phase 2: Core Linear Data Structures",
+      phase: "Phase 2: Core Linear Data Structures & Memory",
       weeks: "Weeks 3–4",
       goal: "Solve order-dependent and range-query problems efficiently without re-sorting.",
+      mechanics: "Tracking next greater elements, O(1) lookups, and top-K elements.",
       archetypeIds: [4, 5, 6, 7],
-      keyTakeaways: "Strict monotonic sequence maintenance, in-place cyclic swaps, and top-K binary heap properties."
+      keyTakeaways: "Strict monotonic sequence maintenance, in-place cyclic swaps, and top-K binary heap properties.",
+      gfgLinks: [
+        { title: "GFG Stack Data Structure", url: "https://www.geeksforgeeks.org/stack-data-structure/" },
+        { title: "GFG Hashing Data Structure", url: "https://www.geeksforgeeks.org/hashing-data-structure/" }
+      ]
     },
     {
-      phase: "Phase 3: Hierarchical Structures & Search Space",
+      phase: "Phase 3: Hierarchical Data & Search Space",
       weeks: "Weeks 5–6",
       goal: "Master divide-and-conquer logic, tree recursion, and monotonic answer spaces.",
+      mechanics: "In/Pre/Post-order traversals, lowest common ancestors, and monotonic decision boundaries.",
       archetypeIds: [8, 12],
-      keyTakeaways: "Bottom-up tree state propagation and binary search over continuous or discrete monotonic predicate functions."
+      keyTakeaways: "Bottom-up tree state propagation and binary search over continuous or discrete monotonic predicate functions.",
+      gfgLinks: [
+        { title: "GFG Binary Tree", url: "https://www.geeksforgeeks.org/binary-tree-data-structure/" },
+        { title: "GFG Binary Search", url: "https://www.geeksforgeeks.org/binary-search/" }
+      ]
     },
     {
       phase: "Phase 4: Graph Theory & Combinatorial Search",
       weeks: "Weeks 7–8",
       goal: "Model real-world dependency networks and state-space tree prunings.",
+      mechanics: "Shortest paths, connected components, dependency graph modeling, and combinatorial DFS.",
       archetypeIds: [9, 10, 11],
-      keyTakeaways: "Level-order matrix BFS, cycle detection with DSU, topological DAG ordering, and backtracking state restoration."
+      keyTakeaways: "Level-order matrix BFS, cycle detection with DSU, topological DAG ordering, and backtracking state restoration.",
+      gfgLinks: [
+        { title: "GFG Graph Data Structure", url: "https://www.geeksforgeeks.org/graph-data-structure-and-algorithms/" },
+        { title: "GFG Backtracking Algorithms", url: "https://www.geeksforgeeks.org/backtracking-algorithms/" }
+      ]
     },
     {
       phase: "Phase 5: Advanced Optimization & State Transitions",
       weeks: "Weeks 9–11",
       goal: "Recognize state transition equations and convert exponential recursion to polynomial time.",
+      mechanics: "Overlapping subproblems, state transitions, and interval scheduling.",
       archetypeIds: [13, 14],
-      keyTakeaways: "1D/2D memoization tables, rolling array space optimization, interval partitions, and greedy sorting invariants."
+      keyTakeaways: "1D/2D memoization tables, rolling array space optimization, interval partitions, and greedy sorting invariants.",
+      gfgLinks: [
+        { title: "GFG Dynamic Programming", url: "https://www.geeksforgeeks.org/dynamic-programming/" },
+        { title: "GFG Greedy Algorithms", url: "https://www.geeksforgeeks.org/greedy-algorithms/" }
+      ]
     },
     {
       phase: "Phase 6: Composite Patterns & Advanced Structures",
       weeks: "Weeks 12+",
-      goal: "Handle high-constraint edge cases under strict O(N log N) or O(1) limits.",
+      goal: "Handle high-constraint edge cases under strict O(N log N) or O(1) space limits.",
+      mechanics: "Bitmask DP, custom Trie dictionaries, and multi-paradigm combinations.",
       archetypeIds: [6, 7, 13],
-      keyTakeaways: "Bitmask DP, custom Trie dictionaries, and multi-paradigm combinations (Binary Search + BFS, DP + Monotonic Stack)."
+      keyTakeaways: "Bitmask DP, custom Trie dictionaries, and multi-paradigm combinations (Binary Search + BFS, DP + Monotonic Stack).",
+      gfgLinks: [
+        { title: "GFG Bitmasking and DP", url: "https://www.geeksforgeeks.org/bitmasking-and-dynamic-programming/" },
+        { title: "GFG Segment Tree", url: "https://www.geeksforgeeks.org/segment-tree-data-structure/" }
+      ]
     }
   ];
 
@@ -125,14 +191,14 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
           <div className="flex items-center gap-2">
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <Layers className="w-5 h-5 text-indigo-400" />
-              <span>Unified 15-Archetype Taxonomy & Mastery Roadmap</span>
+              <span>Unified 15-Archetype Taxonomy & GFG Mastery Roadmap</span>
             </h3>
             <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[11px] font-mono">
               Zero Duplication
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            2,870 LeetCode challenges partitioned into 15 algorithmic mechanics across 4 Core Paradigms with 5-tier difficulty stratification.
+            2,870 LeetCode challenges mapped into 15 algorithmic mechanics across 4 Core Paradigms, NLP multi-label pattern classifier, and GeeksforGeeks learning paths.
           </p>
         </div>
 
@@ -159,7 +225,19 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
             }`}
           >
             <Milestone className="w-3.5 h-3.5" />
-            <span>6-Phase Roadmap</span>
+            <span>GFG Roadmap</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('classifier')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === 'classifier'
+                ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <BrainCircuit className="w-3.5 h-3.5 text-cyan-300" />
+            <span>NLP Pattern Classifier</span>
           </button>
         </div>
       </div>
@@ -268,7 +346,7 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
         </div>
       )}
 
-      {/* Mode B: 6-Phase Chronological Mastery Roadmap */}
+      {/* Mode B: 6-Phase Chronological Mastery Roadmap + GeeksforGeeks Links */}
       {viewMode === 'roadmap' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -285,37 +363,215 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
                     <span className="px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 text-[10px] font-mono">
                       {phase.weeks}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-500">Step 0{idx + 1}</span>
+                    <span className="text-[10px] font-mono text-slate-500">Phase 0{idx + 1}</span>
                   </div>
 
                   <h4 className="text-sm font-bold text-slate-100">{phase.phase}</h4>
                   <p className="text-xs text-indigo-300 font-medium">{phase.goal}</p>
+                  
+                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
+                    <span className="text-[10px] font-semibold uppercase text-cyan-400 tracking-wider flex items-center gap-1">
+                      <Code2 className="w-3 h-3" /> Problem Mechanics
+                    </span>
+                    <p className="text-[11px] text-slate-300">{phase.mechanics}</p>
+                  </div>
+
                   <p className="text-xs text-slate-400 leading-relaxed">{phase.keyTakeaways}</p>
                 </div>
 
-                <div className="space-y-2 pt-3 border-t border-slate-800">
-                  <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
-                    Core Archetypes Covered
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {phase.archetypeIds.map((id) => {
-                      const arch = clusters.find(c => c.cluster_id === id);
-                      if (!arch) return null;
-                      return (
-                        <button
-                          key={id}
-                          onClick={() => handleOpenClusterModal(arch)}
-                          className="text-[11px] px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 flex items-center gap-1 transition-colors"
+                <div className="space-y-3 pt-3 border-t border-slate-800">
+                  {/* GeeksforGeeks (GFG) Curated Topic Links */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] uppercase font-semibold text-emerald-400 tracking-wider flex items-center gap-1">
+                      <BookOpen className="w-3 h-3" /> GeeksforGeeks (GFG) Modules
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {phase.gfgLinks.map((gfg, i) => (
+                        <a
+                          key={i}
+                          href={gfg.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] px-2 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/80 flex items-center gap-1 transition-colors"
                         >
-                          <span>{arch.title}</span>
-                          <ArrowUpRight className="w-3 h-3 text-slate-500" />
-                        </button>
-                      );
-                    })}
+                          <span>{gfg.title}</span>
+                          <ExternalLink className="w-3 h-3 opacity-70" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Covered Archetypes */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+                      Core Archetypes Covered
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {phase.archetypeIds.map((id) => {
+                        const arch = clusters.find(c => c.cluster_id === id);
+                        if (!arch) return null;
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => handleOpenClusterModal(arch)}
+                            className="text-[11px] px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 flex items-center gap-1 transition-colors"
+                          >
+                            <span>{arch.title}</span>
+                            <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </motion.div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mode C: NLP Multi-Label Pattern Classifier Test Lab */}
+      {viewMode === 'classifier' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Input Form Card */}
+            <div className="lg:col-span-5 glass-panel rounded-2xl p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <BrainCircuit className="w-5 h-5 text-indigo-400" />
+                <h4 className="text-sm font-bold text-slate-100">Multi-Label NLP Pattern Detector</h4>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Paste any raw LeetCode problem description (Markdown or text). The BCE-calibrated model analyzes linguistic cues and mathematical constraints to predict overlapping DSA archetypes.
+              </p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">Problem Title (Optional)</label>
+                  <input
+                    type="text"
+                    value={classifierTitle}
+                    onChange={(e) => setClassifierTitle(e.target.value)}
+                    placeholder="e.g. Subarray Sum Equals K"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">Problem Description / Constraints</label>
+                  <textarea
+                    rows={6}
+                    value={classifierInput}
+                    onChange={(e) => setClassifierInput(e.target.value)}
+                    placeholder="Given an array of integers nums and an integer k, return the total number of continuous subarrays whose sum equals to k..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-none font-mono"
+                  />
+                </div>
+
+                <button
+                  onClick={handleClassifyProblem}
+                  disabled={isClassifying || !classifierInput.trim()}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-md shadow-indigo-500/20"
+                >
+                  {isClassifying ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Evaluating Multi-Label BCE Logits...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Classify Algorithmic Patterns</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* CodeBERT Info Card */}
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-2 mt-4">
+                <div className="flex items-center gap-2 text-cyan-400 text-xs font-semibold">
+                  <Terminal className="w-4 h-4" />
+                  <span>CodeBERT Fine-Tuning Pipeline</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Run <code className="text-cyan-300 font-mono">python train_pattern_transformer.py --train</code> to fine-tune <code className="text-indigo-300 font-mono">microsoft/codebert-base</code> on the 15 Archetypes using PyTorch and Hugging Face Transformers.
+                </p>
+              </div>
+            </div>
+
+            {/* Prediction Results Display */}
+            <div className="lg:col-span-7 space-y-4">
+              {predictedPatterns ? (
+                <div className="glass-panel rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                      <BookmarkCheck className="w-4 h-4 text-emerald-400" />
+                      <span>Predicted Algorithmic Archetypes</span>
+                    </h4>
+                    <span className="text-xs text-slate-400 font-mono">
+                      Multi-Label BCE Probabilities
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {predictedPatterns.map((pat, idx) => (
+                      <div
+                        key={idx}
+                        className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3 hover:border-slate-700 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+                              {pat.paradigm}
+                            </span>
+                            <h5 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                              <span>{pat.name}</span>
+                              <span className="text-xs font-mono text-cyan-400">
+                                {pat.confidence_pct}% Match
+                              </span>
+                            </h5>
+                          </div>
+
+                          {pat.gfg_url && (
+                            <a
+                              href={pat.gfg_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800 text-xs font-medium flex items-center gap-1 transition-colors"
+                            >
+                              <span>GFG Guide</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+
+                        {/* Probability Progress Bar */}
+                        <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full"
+                            style={{ width: `${Math.min(100, pat.confidence_pct)}%` }}
+                          />
+                        </div>
+
+                        {/* Invariant Equation */}
+                        {pat.invariant && (
+                          <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800/80 font-mono text-[11px] text-cyan-300">
+                            {pat.invariant}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="glass-panel rounded-2xl p-12 text-center space-y-3">
+                  <BrainCircuit className="w-12 h-12 text-slate-600 mx-auto" />
+                  <h4 className="text-sm font-bold text-slate-300">Ready to Classify DSA Patterns</h4>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    Enter any technical coding problem statement to identify its underlying algorithmic archetype, mathematical invariants, and GeeksforGeeks study roadmap.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -346,12 +602,25 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
                   <p className="text-xs text-slate-300">{selectedCluster.description}</p>
                 </div>
 
-                <button
-                  onClick={() => setSelectedCluster(null)}
-                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {selectedCluster.gfg_url && (
+                    <a
+                      href={selectedCluster.gfg_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>GFG Tutorial</span>
+                    </a>
+                  )}
+                  <button
+                    onClick={() => setSelectedCluster(null)}
+                    className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Invariant & Complexity Callout */}

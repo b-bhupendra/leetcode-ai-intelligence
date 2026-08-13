@@ -21,6 +21,7 @@ FILES_TO_INCLUDE = [
     "ml_models.py",
     "scraper_engine.py",
     "agent_queue_worker.py",
+    "train_pattern_transformer.py",
     "load_data.py",
     "merge_datasets.py",
     "frontend/package.json",

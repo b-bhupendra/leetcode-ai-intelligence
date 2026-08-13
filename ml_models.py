@@ -357,6 +357,24 @@ def compute_difficulty_tier(difficulty: str, topic_tags: Any, description: str =
     return "Medium"
 
 
+def clean_problem_text_for_nlp(text: str) -> str:
+    """
+    Strips HTML, markdown links/images, boilerplate headers (Example 1, Constraints),
+    while preserving algorithmic clues, numbers, and mathematical conditions.
+    """
+    if not text or pd.isna(text):
+        return ""
+    text = re.sub(r"<[^>]+>", " ", str(text))
+    text = re.sub(r"!\[.*?\]\(.*?\)", " ", text)
+    text = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text)
+    text = re.sub(r"```[\s\S]*?```", " ", text)
+    text = re.sub(r"`([^`]*)`", r"\1", text)
+    text = re.sub(r"(example\s*\d+:|constraints:|input:|output:|explanation:|follow\s*up:)", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"[^\w\s\-\+\*\/\<\>\=\$\%]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip().lower()
+    return text
+
+
 ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
     0: {
         "id": 0,
@@ -367,7 +385,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "left < right with monotonic convergence condition.",
         "complexity": "Time: O(N), Space: O(1)",
         "canonical_examples": ["two-sum-ii-input-array-is-sorted", "3sum", "container-with-most-water", "trapping-rain-water"],
-        "keywords": ["two pointer", "opposite ends", "converge", "palindrome", "sorted pair", "left right", "partition array"]
+        "keywords": ["two pointer", "opposite ends", "converge", "palindrome", "sorted pair", "left right", "partition array"],
+        "gfg_topic": "Two Pointers Technique",
+        "gfg_url": "https://www.geeksforgeeks.org/two-pointers-technique/"
     },
     1: {
         "id": 1,
@@ -378,7 +398,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Fixed: [R - K + 1 ... R] | Variable: expand R, while invalid shrink L.",
         "complexity": "Time: O(N), Space: O(K) or O(1)",
         "canonical_examples": ["maximum-average-subarray-i", "longest-substring-without-repeating-characters", "max-consecutive-ones-iii", "minimum-window-substring", "subarrays-with-k-different-integers"],
-        "keywords": ["sliding window", "subarray", "substring", "contiguous", "longest substring", "at most k", "minimum window"]
+        "keywords": ["sliding window", "subarray", "substring", "contiguous", "longest substring", "at most k", "minimum window"],
+        "gfg_topic": "Window Sliding Technique",
+        "gfg_url": "https://www.geeksforgeeks.org/window-sliding-technique/"
     },
     2: {
         "id": 2,
@@ -389,7 +411,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Sum(i...j) = Prefix[j+1] - Prefix[i] | Diff[L]+=V, Diff[R+1]-=V",
         "complexity": "Time: O(1) query / O(N) precompute, Space: O(N)",
         "canonical_examples": ["subarray-sum-equals-k", "range-sum-query-immutable", "corporate-flight-bookings", "product-of-array-except-self"],
-        "keywords": ["prefix sum", "cumulative", "difference array", "range sum", "subarray sum", "prefix", "running sum"]
+        "keywords": ["prefix sum", "cumulative", "difference array", "range sum", "subarray sum", "prefix", "running sum"],
+        "gfg_topic": "Prefix Sum Array & Applications",
+        "gfg_url": "https://www.geeksforgeeks.org/prefix-sum-array-implementation-applications-competitive-programming/"
     },
     3: {
         "id": 3,
@@ -400,7 +424,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "slow moves 1 step, fast moves 2 steps. Intersection implies cycle.",
         "complexity": "Time: O(N), Space: O(1)",
         "canonical_examples": ["linked-list-cycle", "linked-list-cycle-ii", "find-the-duplicate-number", "happy-number", "middle-of-the-linked-list"],
-        "keywords": ["fast slow", "cycle", "tortoise hare", "floyd", "middle linked list", "linked list cycle", "happy number"]
+        "keywords": ["fast slow", "cycle", "tortoise hare", "floyd", "middle linked list", "linked list cycle", "happy number"],
+        "gfg_topic": "Floyd's Cycle Finding Algorithm",
+        "gfg_url": "https://www.geeksforgeeks.org/floyds-cycle-finding-algorithm/"
     },
     4: {
         "id": 4,
@@ -411,7 +437,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Stack elements maintain strict monotonicity. Pop elements that violate invariant.",
         "complexity": "Time: O(N) amortized, Space: O(N)",
         "canonical_examples": ["daily-temperatures", "next-greater-element-i", "largest-rectangle-in-histogram", "sliding-window-maximum", "online-stock-span"],
-        "keywords": ["monotonic stack", "next greater", "next smaller", "histogram", "monotonic queue", "temperatures", "stock span"]
+        "keywords": ["monotonic stack", "next greater", "next smaller", "histogram", "monotonic queue", "temperatures", "stock span"],
+        "gfg_topic": "Next Greater Element & Monotonic Stack",
+        "gfg_url": "https://www.geeksforgeeks.org/next-greater-element/"
     },
     5: {
         "id": 5,
@@ -422,7 +450,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "while nums[i] != nums[nums[i]-1]: swap(i, nums[i]-1)",
         "complexity": "Time: O(N), Space: O(1)",
         "canonical_examples": ["first-missing-positive", "missing-number", "find-all-duplicates-in-an-array", "set-mismatch"],
-        "keywords": ["cyclic sort", "first missing", "in-place swap", "1 to n", "duplicate number", "missing number", "in-place"]
+        "keywords": ["cyclic sort", "first missing", "in-place swap", "1 to n", "duplicate number", "missing number", "in-place"],
+        "gfg_topic": "Cycle Sort Algorithm",
+        "gfg_url": "https://www.geeksforgeeks.org/cycle-sort/"
     },
     6: {
         "id": 6,
@@ -433,7 +463,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Min-heap / Max-heap root invariant. Top-K maintains heap of size K.",
         "complexity": "Time: O(N log K), Space: O(K)",
         "canonical_examples": ["kth-largest-element-in-an-array", "top-k-frequent-elements", "find-median-from-data-stream", "merge-k-sorted-lists", "task-scheduler"],
-        "keywords": ["heap", "priority queue", "kth largest", "top k", "median stream", "min heap", "max heap", "priority"]
+        "keywords": ["heap", "priority queue", "kth largest", "top k", "median stream", "min heap", "max heap", "priority"],
+        "gfg_topic": "Heap Data Structure & Priority Queue",
+        "gfg_url": "https://www.geeksforgeeks.org/heap-data-structure/"
     },
     7: {
         "id": 7,
@@ -444,7 +476,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Prefix tree node transition on char. Rolling hash: H = (H * B + C) % M",
         "complexity": "Time: O(L) per word, Space: O(N * L * Alphabet)",
         "canonical_examples": ["implement-trie-prefix-tree", "word-search-ii", "longest-duplicate-substring", "group-anagrams", "design-add-and-search-words-data-structure"],
-        "keywords": ["trie", "prefix tree", "hash table", "rolling hash", "rabin karp", "anagram", "hash map", "frequency map"]
+        "keywords": ["trie", "prefix tree", "hash table", "rolling hash", "rabin karp", "anagram", "hash map", "frequency map"],
+        "gfg_topic": "Trie Insert and Search",
+        "gfg_url": "https://www.geeksforgeeks.org/trie-insert-and-search/"
     },
     8: {
         "id": 8,
@@ -455,7 +489,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "State(node) = f(State(node.left), State(node.right))",
         "complexity": "Time: O(N), Space: O(H) where H is tree height",
         "canonical_examples": ["lowest-common-ancestor-of-a-binary-tree", "binary-tree-maximum-path-sum", "diameter-of-binary-tree", "house-robber-iii", "serialize-and-deserialize-binary-tree"],
-        "keywords": ["tree", "binary tree", "bst", "lowest common ancestor", "tree dp", "traversal", "postorder", "inorder", "preorder"]
+        "keywords": ["tree", "binary tree", "bst", "lowest common ancestor", "tree dp", "traversal", "postorder", "inorder", "preorder"],
+        "gfg_topic": "Binary Tree & Tree Traversals",
+        "gfg_url": "https://www.geeksforgeeks.org/binary-tree-data-structure/"
     },
     9: {
         "id": 9,
@@ -466,7 +502,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Queue tracks frontier level-by-level; Visited set prevents infinite cycles.",
         "complexity": "Time: O(V + E) or O(R * C), Space: O(V + E)",
         "canonical_examples": ["number-of-islands", "rotting-oranges", "pacific-atlantic-water-flow", "word-ladder", "clone-graph", "cheapest-flights-within-k-stops"],
-        "keywords": ["graph", "bfs", "dfs", "matrix", "grid", "islands", "shortest path", "flood fill", "dijkstra", "bipartite"]
+        "keywords": ["graph", "bfs", "dfs", "matrix", "grid", "islands", "shortest path", "flood fill", "dijkstra", "bipartite"],
+        "gfg_topic": "Graph Data Structure & BFS/DFS",
+        "gfg_url": "https://www.geeksforgeeks.org/graph-data-structure-and-algorithms/"
     },
     10: {
         "id": 10,
@@ -477,7 +515,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "DSU: Find(x) == Find(y) | Topo: indegree == 0 nodes enter queue first.",
         "complexity": "Time: O((V+E) * alpha(V)) or O(V+E), Space: O(V+E)",
         "canonical_examples": ["course-schedule", "course-schedule-ii", "redundant-connection", "graph-valid-tree", "accounts-merge", "number-of-provinces"],
-        "keywords": ["union find", "dsu", "topological sort", "indegree", "cycle detection", "disjoint set", "course schedule", "connected components"]
+        "keywords": ["union find", "dsu", "topological sort", "indegree", "cycle detection", "disjoint set", "course schedule", "connected components"],
+        "gfg_topic": "Disjoint Set Union (Union-Find)",
+        "gfg_url": "https://www.geeksforgeeks.org/disjoint-set-data-structures/"
     },
     11: {
         "id": 11,
@@ -488,7 +528,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Choose -> Explore -> Unchoose (backtrack state restore)",
         "complexity": "Time: O(K^N) or O(N!), Space: O(N) recursion stack",
         "canonical_examples": ["subsets", "permutations", "n-queens", "sudoku-solver", "word-search", "combination-sum", "palindrome-partitioning"],
-        "keywords": ["backtracking", "subsets", "permutations", "combinations", "n queens", "pruning", "dfs search", "sudoku", "combination sum"]
+        "keywords": ["backtracking", "subsets", "permutations", "combinations", "n queens", "pruning", "dfs search", "sudoku", "combination sum"],
+        "gfg_topic": "Backtracking Algorithms",
+        "gfg_url": "https://www.geeksforgeeks.org/backtracking-algorithms/"
     },
     12: {
         "id": 12,
@@ -499,7 +541,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "low <= high; monotonic predicate condition divides search space.",
         "complexity": "Time: O(N log(SearchSpace)), Space: O(1)",
         "canonical_examples": ["koko-eating-bananas", "capacity-to-ship-packages-within-d-days", "split-array-largest-sum", "find-first-and-last-position-of-element-in-sorted-array", "search-in-rotated-sorted-array"],
-        "keywords": ["binary search", "search space", "monotonic", "koko", "capacity", "optimal boundary", "bisect", "rotated sorted"]
+        "keywords": ["binary search", "search space", "monotonic", "koko", "capacity", "optimal boundary", "bisect", "rotated sorted"],
+        "gfg_topic": "Binary Search Algorithms",
+        "gfg_url": "https://www.geeksforgeeks.org/binary-search/"
     },
     13: {
         "id": 13,
@@ -510,7 +554,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "DP[state] = optimal_transition(DP[sub_states])",
         "complexity": "Time: O(States * Transitions), Space: O(States)",
         "canonical_examples": ["climbing-stairs", "house-robber", "longest-common-subsequence", "coin-change", "burst-balloons", "edit-distance", "target-sum"],
-        "keywords": ["dynamic programming", "memoization", "knapsack", "subsequence", "interval dp", "bitmask dp", "state transition", "dp", "longest common"]
+        "keywords": ["dynamic programming", "memoization", "knapsack", "subsequence", "interval dp", "bitmask dp", "state transition", "dp", "longest common"],
+        "gfg_topic": "Dynamic Programming (DP)",
+        "gfg_url": "https://www.geeksforgeeks.org/dynamic-programming/"
     },
     14: {
         "id": 14,
@@ -521,7 +567,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Sort by start/end time. Greedy choice property guarantees global optimum.",
         "complexity": "Time: O(N log N), Space: O(1) or O(N)",
         "canonical_examples": ["merge-intervals", "non-overlapping-intervals", "task-scheduler", "gas-station", "jump-game", "minimum-number-of-arrows-to-burst-balloons"],
-        "keywords": ["greedy", "intervals", "merge intervals", "interval scheduling", "locally optimal", "jump game", "gas station", "interval"]
+        "keywords": ["greedy", "intervals", "merge intervals", "interval scheduling", "locally optimal", "jump game", "gas station", "interval"],
+        "gfg_topic": "Greedy Algorithms",
+        "gfg_url": "https://www.geeksforgeeks.org/greedy-algorithms/"
     }
 }
 
@@ -533,13 +581,154 @@ CORE_PARADIGMS = [
 ]
 
 ROADMAP_PHASES = [
-    {"phase": "Phase 1: Linear Pointer Mechanics (Weeks 1-2)", "archetypes": [0, 1, 2, 3], "goal": "Shift from O(N^2) brute force to O(N) single-pass time complexity."},
-    {"phase": "Phase 2: Core Linear Data Structures (Weeks 3-4)", "archetypes": [4, 5, 6, 7], "goal": "Solve order-dependent and range-query problems efficiently without extra re-sorting."},
-    {"phase": "Phase 3: Hierarchical Structures & Search Space (Weeks 5-6)", "archetypes": [8, 12], "goal": "Master divide-and-conquer logic and monotonic functions."},
-    {"phase": "Phase 4: Graph Theory & Combinatorial Search (Weeks 7-8)", "archetypes": [9, 10, 11], "goal": "Model real-world dependency networks and state-space prunings."},
-    {"phase": "Phase 5: Advanced Optimization & State Transitions (Weeks 9-11)", "archetypes": [13, 14], "goal": "Recognize state transition equations and convert exponential recursion into polynomial time."},
-    {"phase": "Phase 6: Composite Patterns & Advanced Structures (Weeks 12+)", "archetypes": [7, 13], "goal": "Handle edge cases under strict O(N log N) or O(1) constraints."}
+    {
+        "phase": "Phase 1: Linear Traversals & Pointer Mechanics",
+        "weeks": "Weeks 1–2",
+        "archetypes": [0, 1, 2, 3],
+        "goal": "Shift from O(N²) brute force to O(N) single-pass time complexity.",
+        "mechanics": "Converging/diverging bounds, range queries, and subarray optimization.",
+        "gfg_links": [
+            {"title": "GFG Array Data Structure", "url": "https://www.geeksforgeeks.org/array-data-structure/"},
+            {"title": "GFG Searching Algorithms", "url": "https://www.geeksforgeeks.org/searching-algorithms/"}
+        ]
+    },
+    {
+        "phase": "Phase 2: Core Linear Data Structures & Memory",
+        "weeks": "Weeks 3–4",
+        "archetypes": [4, 5, 6, 7],
+        "goal": "Solve order-dependent and range-query problems efficiently without extra re-sorting.",
+        "mechanics": "Tracking next greater elements, O(1) lookups, and top-K elements.",
+        "gfg_links": [
+            {"title": "GFG Stack Data Structure", "url": "https://www.geeksforgeeks.org/stack-data-structure/"},
+            {"title": "GFG Hashing Data Structure", "url": "https://www.geeksforgeeks.org/hashing-data-structure/"}
+        ]
+    },
+    {
+        "phase": "Phase 3: Hierarchical Data & Search Space",
+        "weeks": "Weeks 5–6",
+        "archetypes": [8, 12],
+        "goal": "Master divide-and-conquer logic, tree recursion, and monotonic answer spaces.",
+        "mechanics": "In/Pre/Post-order traversals, lowest common ancestors, and monotonic decision boundaries.",
+        "gfg_links": [
+            {"title": "GFG Binary Tree", "url": "https://www.geeksforgeeks.org/binary-tree-data-structure/"},
+            {"title": "GFG Binary Search", "url": "https://www.geeksforgeeks.org/binary-search/"}
+        ]
+    },
+    {
+        "phase": "Phase 4: Graph Theory & Combinatorial Search",
+        "weeks": "Weeks 7–8",
+        "archetypes": [9, 10, 11],
+        "goal": "Model real-world dependency networks and state-space tree prunings.",
+        "mechanics": "Shortest paths, connected components, dependency graph modeling, and combinatorial DFS.",
+        "gfg_links": [
+            {"title": "GFG Graph Data Structure", "url": "https://www.geeksforgeeks.org/graph-data-structure-and-algorithms/"},
+            {"title": "GFG Backtracking Algorithms", "url": "https://www.geeksforgeeks.org/backtracking-algorithms/"}
+        ]
+    },
+    {
+        "phase": "Phase 5: Advanced Optimization & State Transitions",
+        "weeks": "Weeks 9–11",
+        "archetypes": [13, 14],
+        "goal": "Recognize state transition equations and convert exponential recursion into polynomial time.",
+        "mechanics": "Overlapping subproblems, state transitions, and interval scheduling.",
+        "gfg_links": [
+            {"title": "GFG Dynamic Programming", "url": "https://www.geeksforgeeks.org/dynamic-programming/"},
+            {"title": "GFG Greedy Algorithms", "url": "https://www.geeksforgeeks.org/greedy-algorithms/"}
+        ]
+    },
+    {
+        "phase": "Phase 6: Composite Patterns & Advanced Structures",
+        "weeks": "Weeks 12+",
+        "archetypes": [6, 7, 13],
+        "goal": "Handle edge cases under strict O(N log N) or O(1) space constraints.",
+        "mechanics": "Bitmask DP, custom Trie dictionaries, and multi-paradigm combinations.",
+        "gfg_links": [
+            {"title": "GFG Bitmasking and DP", "url": "https://www.geeksforgeeks.org/bitmasking-and-dynamic-programming/"},
+            {"title": "GFG Segment Tree", "url": "https://www.geeksforgeeks.org/segment-tree-data-structure/"}
+        ]
+    }
 ]
+
+
+class MultiLabelPatternClassifier:
+    """
+    NLP Multi-Label Pattern Classifier.
+    Predicts multiple overlapping DSA patterns (e.g. Dynamic Programming, Sliding Window)
+    from unannotated raw problem descriptions using BCE-calibrated probabilities.
+    """
+    def __init__(self, n_archetypes: int = 15):
+        self.n_archetypes = n_archetypes
+        self.vectorizer = TfidfVectorizer(
+            max_features=6000,
+            sublinear_tf=True,
+            ngram_range=(1, 3),
+            stop_words="english",
+            min_df=2
+        )
+        self.classifiers = [
+            LogisticRegression(class_weight="balanced", max_iter=400, random_state=42 + i, C=1.5)
+            for i in range(n_archetypes)
+        ]
+        self.is_fitted = False
+
+    def fit(self, texts: List[str], multi_hot_labels: np.ndarray):
+        X_vec = self.vectorizer.fit_transform([clean_problem_text_for_nlp(t) for t in texts])
+        for i in range(self.n_archetypes):
+            y_i = multi_hot_labels[:, i]
+            if len(np.unique(y_i)) > 1:
+                self.classifiers[i].fit(X_vec, y_i)
+        self.is_fitted = True
+        return self
+
+    def predict_patterns(self, text: str, threshold: float = 0.25, top_k: int = 5) -> List[Dict[str, Any]]:
+        cleaned = clean_problem_text_for_nlp(text)
+        if not self.is_fitted:
+            # Fallback heuristic prediction
+            pred_id = classify_problem_to_archetype({"problem_description": text, "title": text})
+            arch = ARCHETYPES_TAXONOMY.get(pred_id, ARCHETYPES_TAXONOMY[0])
+            return [{
+                "archetype_id": pred_id,
+                "name": arch["name"],
+                "paradigm": arch["paradigm"],
+                "probability": 0.85,
+                "confidence_pct": 85.0,
+                "invariant": arch["invariant"],
+                "complexity": arch["complexity"],
+                "gfg_topic": arch["gfg_topic"],
+                "gfg_url": arch["gfg_url"]
+            }]
+
+        X_vec = self.vectorizer.transform([cleaned])
+        scored = []
+        for i in range(self.n_archetypes):
+            arch = ARCHETYPES_TAXONOMY[i]
+            prob = 0.0
+            if hasattr(self.classifiers[i], "predict_proba"):
+                prob = float(self.classifiers[i].predict_proba(X_vec)[0, 1])
+            
+            # Boost canonical keyword detections
+            for kw in arch.get("keywords", []):
+                if kw in cleaned:
+                    prob = min(0.98, prob + 0.20)
+
+            scored.append({
+                "archetype_id": i,
+                "name": arch["name"],
+                "paradigm": arch["paradigm"],
+                "probability": round(prob, 4),
+                "confidence_pct": round(prob * 100, 1),
+                "invariant": arch["invariant"],
+                "complexity": arch["complexity"],
+                "gfg_topic": arch["gfg_topic"],
+                "gfg_url": arch["gfg_url"],
+                "canonical_examples": arch["canonical_examples"]
+            })
+
+        scored.sort(key=lambda x: x["probability"], reverse=True)
+        # Filter by threshold or return top_k
+        filtered = [s for s in scored if s["probability"] >= threshold]
+        return filtered[:top_k] if filtered else scored[:top_k]
+
 
 
 def classify_problem_to_archetype(row) -> int:
@@ -768,6 +957,7 @@ class LeetCodeIntelligenceEngine:
         self.topic_classifier = TopicClassifier()
         self.company_classifier = CompanyClassifier()
         self.cluster_engine = ProblemClusterEngine()
+        self.pattern_classifier = MultiLabelPatternClassifier(n_archetypes=15)
         self.df: Optional[pd.DataFrame] = None
         self.X_features: Optional[csr_matrix] = None
         self.is_ready = False
@@ -789,6 +979,25 @@ class LeetCodeIntelligenceEngine:
         print("--- Fitting Problem Cluster Engine ---")
         self.cluster_engine.fit(self.X_features, df_full, self.feature_extractor)
 
+        print("--- Fitting Multi-Label Pattern Classifier ---")
+        labels = np.zeros((len(df_full), 15), dtype=int)
+        for i, (_, row) in enumerate(df_full.iterrows()):
+            c_id = row.get("cluster_id")
+            if pd.notna(c_id) and 0 <= int(c_id) < 15:
+                labels[i, int(c_id)] = 1
+            tag_str = " ".join(row.get("topic_tags", [])) if isinstance(row.get("topic_tags"), list) else str(row.get("topic_tags", ""))
+            if "dynamic programming" in tag_str.lower(): labels[i, 13] = 1
+            if "sliding window" in tag_str.lower(): labels[i, 1] = 1
+            if "two pointers" in tag_str.lower(): labels[i, 0] = 1
+            if "binary search" in tag_str.lower(): labels[i, 12] = 1
+            if "tree" in tag_str.lower(): labels[i, 8] = 1
+            if "graph" in tag_str.lower(): labels[i, 9] = 1
+            if "backtracking" in tag_str.lower(): labels[i, 11] = 1
+            if "greedy" in tag_str.lower(): labels[i, 14] = 1
+
+        descriptions = df_full["problem_description"].fillna(df_full["task_id"]).tolist()
+        self.pattern_classifier.fit(descriptions, labels)
+
         self.df = df_full.copy()
         self.df["cluster_id"] = [self.cluster_engine.kmeans.predict(self.X_features[i])[0] for i in range(len(df_full))]
         self.df["cluster_title"] = self.df["cluster_id"].map(self.cluster_engine.cluster_labels)
@@ -800,6 +1009,7 @@ class LeetCodeIntelligenceEngine:
         joblib.dump(self.topic_classifier, os.path.join(self.models_dir, "topic_classifier.joblib"))
         joblib.dump(self.company_classifier, os.path.join(self.models_dir, "company_classifier.joblib"))
         joblib.dump(self.cluster_engine, os.path.join(self.models_dir, "cluster_engine.joblib"))
+        joblib.dump(self.pattern_classifier, os.path.join(self.models_dir, "pattern_classifier.joblib"))
         joblib.dump(self.X_features, os.path.join(self.models_dir, "X_features.joblib"))
         
         self.df.to_parquet(os.path.join(OUTPUT_DIR, "leetcode_with_companies_and_clusters.parquet"), index=False)
@@ -828,8 +1038,33 @@ class LeetCodeIntelligenceEngine:
             self.df["cluster_id"] = [self.cluster_engine.kmeans.predict(self.X_features[i])[0] for i in range(len(self.df))]
             self.df["cluster_title"] = self.df["cluster_id"].map(self.cluster_engine.cluster_labels)
 
+        # Fit lightweight multi-label pattern classifier
+        self.pattern_classifier = MultiLabelPatternClassifier(n_archetypes=15)
+        labels = np.zeros((len(self.df), 15), dtype=int)
+        for i, (_, row) in enumerate(self.df.iterrows()):
+            c_id = row.get("cluster_id")
+            if pd.notna(c_id) and 0 <= int(c_id) < 15:
+                labels[i, int(c_id)] = 1
+            tag_str = " ".join(row.get("topic_tags", [])) if isinstance(row.get("topic_tags"), list) else str(row.get("topic_tags", ""))
+            if "dynamic programming" in tag_str.lower(): labels[i, 13] = 1
+            if "sliding window" in tag_str.lower(): labels[i, 1] = 1
+            if "two pointers" in tag_str.lower(): labels[i, 0] = 1
+            if "binary search" in tag_str.lower(): labels[i, 12] = 1
+            if "tree" in tag_str.lower(): labels[i, 8] = 1
+            if "graph" in tag_str.lower(): labels[i, 9] = 1
+            if "backtracking" in tag_str.lower(): labels[i, 11] = 1
+            if "greedy" in tag_str.lower(): labels[i, 14] = 1
+
+        descriptions = self.df["problem_description"].fillna(self.df["task_id"]).tolist()
+        self.pattern_classifier.fit(descriptions, labels)
+
         self.is_ready = True
         print("Models successfully loaded and ready.")
+
+    def predict_patterns(self, text: str, title: str = "", top_k: int = 5) -> List[Dict[str, Any]]:
+        """Predicts multi-label algorithmic patterns from problem text."""
+        full_text = f"{title}\n{text}" if title else text
+        return self.pattern_classifier.predict_patterns(full_text, threshold=0.20, top_k=top_k)
 
     def autoclassify_and_enrich(self, raw_problem: Dict[str, Any]) -> Dict[str, Any]:
         """

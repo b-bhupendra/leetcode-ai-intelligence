@@ -14,6 +14,7 @@
 - `ml_models.py`
 - `scraper_engine.py`
 - `agent_queue_worker.py`
+- `train_pattern_transformer.py`
 - `load_data.py`
 - `merge_datasets.py`
 - `frontend/package.json`
@@ -913,6 +914,16 @@ class PredictRequest(BaseModel):
     title: Optional[str] = ""
     description: str
     difficulty: Optional[str] = "Medium"
+    topic_tags: Optional[List[str]] = None
+    top_k: Optional[int] = 8
+
+
+class PatternPredictRequest(BaseModel):
+    title: Optional[str] = ""
+    description: str
+    top_k: Optional[int] = 5
+
+
 ALL_DIFFICULTY_TIERS = ["Easy", "Easy-Medium", "Medium", "Medium-Hard", "Hard"]
 
 
@@ -985,6 +996,20 @@ def predict_company(req: PredictRequest):
             difficulty=req.difficulty or "Medium",
             topic_tags=req.topic_tags or [],
             top_k=req.top_k or 8
+        )
+        return JSONResponse(content={"status": "success", "data": results})
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+
+@app.post("/api/predict/pattern")
+def predict_patterns(req: PatternPredictRequest):
+    """Predicts multi-label algorithmic patterns from problem description using NLP BCE classifier."""
+    try:
+        results = engine.predict_patterns(
+            text=req.description,
+            title=req.title or "",
+            top_k=req.top_k or 5
         )
         return JSONResponse(content={"status": "success", "data": results})
     except Exception as e:
@@ -1643,6 +1668,24 @@ def compute_difficulty_tier(difficulty: str, topic_tags: Any, description: str =
     return "Medium"
 
 
+def clean_problem_text_for_nlp(text: str) -> str:
+    """
+    Strips HTML, markdown links/images, boilerplate headers (Example 1, Constraints),
+    while preserving algorithmic clues, numbers, and mathematical conditions.
+    """
+    if not text or pd.isna(text):
+        return ""
+    text = re.sub(r"<[^>]+>", " ", str(text))
+    text = re.sub(r"!\[.*?\]\(.*?\)", " ", text)
+    text = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", text)
+    text = re.sub(r"```[\s\S]*?```", " ", text)
+    text = re.sub(r"`([^`]*)`", r"\1", text)
+    text = re.sub(r"(example\s*\d+:|constraints:|input:|output:|explanation:|follow\s*up:)", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"[^\w\s\-\+\*\/\<\>\=\$\%]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip().lower()
+    return text
+
+
 ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
     0: {
         "id": 0,
@@ -1653,7 +1696,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "left < right with monotonic convergence condition.",
         "complexity": "Time: O(N), Space: O(1)",
         "canonical_examples": ["two-sum-ii-input-array-is-sorted", "3sum", "container-with-most-water", "trapping-rain-water"],
-        "keywords": ["two pointer", "opposite ends", "converge", "palindrome", "sorted pair", "left right", "partition array"]
+        "keywords": ["two pointer", "opposite ends", "converge", "palindrome", "sorted pair", "left right", "partition array"],
+        "gfg_topic": "Two Pointers Technique",
+        "gfg_url": "https://www.geeksforgeeks.org/two-pointers-technique/"
     },
     1: {
         "id": 1,
@@ -1664,7 +1709,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Fixed: [R - K + 1 ... R] | Variable: expand R, while invalid shrink L.",
         "complexity": "Time: O(N), Space: O(K) or O(1)",
         "canonical_examples": ["maximum-average-subarray-i", "longest-substring-without-repeating-characters", "max-consecutive-ones-iii", "minimum-window-substring", "subarrays-with-k-different-integers"],
-        "keywords": ["sliding window", "subarray", "substring", "contiguous", "longest substring", "at most k", "minimum window"]
+        "keywords": ["sliding window", "subarray", "substring", "contiguous", "longest substring", "at most k", "minimum window"],
+        "gfg_topic": "Window Sliding Technique",
+        "gfg_url": "https://www.geeksforgeeks.org/window-sliding-technique/"
     },
     2: {
         "id": 2,
@@ -1675,7 +1722,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Sum(i...j) = Prefix[j+1] - Prefix[i] | Diff[L]+=V, Diff[R+1]-=V",
         "complexity": "Time: O(1) query / O(N) precompute, Space: O(N)",
         "canonical_examples": ["subarray-sum-equals-k", "range-sum-query-immutable", "corporate-flight-bookings", "product-of-array-except-self"],
-        "keywords": ["prefix sum", "cumulative", "difference array", "range sum", "subarray sum", "prefix", "running sum"]
+        "keywords": ["prefix sum", "cumulative", "difference array", "range sum", "subarray sum", "prefix", "running sum"],
+        "gfg_topic": "Prefix Sum Array & Applications",
+        "gfg_url": "https://www.geeksforgeeks.org/prefix-sum-array-implementation-applications-competitive-programming/"
     },
     3: {
         "id": 3,
@@ -1686,7 +1735,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "slow moves 1 step, fast moves 2 steps. Intersection implies cycle.",
         "complexity": "Time: O(N), Space: O(1)",
         "canonical_examples": ["linked-list-cycle", "linked-list-cycle-ii", "find-the-duplicate-number", "happy-number", "middle-of-the-linked-list"],
-        "keywords": ["fast slow", "cycle", "tortoise hare", "floyd", "middle linked list", "linked list cycle", "happy number"]
+        "keywords": ["fast slow", "cycle", "tortoise hare", "floyd", "middle linked list", "linked list cycle", "happy number"],
+        "gfg_topic": "Floyd's Cycle Finding Algorithm",
+        "gfg_url": "https://www.geeksforgeeks.org/floyds-cycle-finding-algorithm/"
     },
     4: {
         "id": 4,
@@ -1697,7 +1748,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Stack elements maintain strict monotonicity. Pop elements that violate invariant.",
         "complexity": "Time: O(N) amortized, Space: O(N)",
         "canonical_examples": ["daily-temperatures", "next-greater-element-i", "largest-rectangle-in-histogram", "sliding-window-maximum", "online-stock-span"],
-        "keywords": ["monotonic stack", "next greater", "next smaller", "histogram", "monotonic queue", "temperatures", "stock span"]
+        "keywords": ["monotonic stack", "next greater", "next smaller", "histogram", "monotonic queue", "temperatures", "stock span"],
+        "gfg_topic": "Next Greater Element & Monotonic Stack",
+        "gfg_url": "https://www.geeksforgeeks.org/next-greater-element/"
     },
     5: {
         "id": 5,
@@ -1708,7 +1761,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "while nums[i] != nums[nums[i]-1]: swap(i, nums[i]-1)",
         "complexity": "Time: O(N), Space: O(1)",
         "canonical_examples": ["first-missing-positive", "missing-number", "find-all-duplicates-in-an-array", "set-mismatch"],
-        "keywords": ["cyclic sort", "first missing", "in-place swap", "1 to n", "duplicate number", "missing number", "in-place"]
+        "keywords": ["cyclic sort", "first missing", "in-place swap", "1 to n", "duplicate number", "missing number", "in-place"],
+        "gfg_topic": "Cycle Sort Algorithm",
+        "gfg_url": "https://www.geeksforgeeks.org/cycle-sort/"
     },
     6: {
         "id": 6,
@@ -1719,7 +1774,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Min-heap / Max-heap root invariant. Top-K maintains heap of size K.",
         "complexity": "Time: O(N log K), Space: O(K)",
         "canonical_examples": ["kth-largest-element-in-an-array", "top-k-frequent-elements", "find-median-from-data-stream", "merge-k-sorted-lists", "task-scheduler"],
-        "keywords": ["heap", "priority queue", "kth largest", "top k", "median stream", "min heap", "max heap", "priority"]
+        "keywords": ["heap", "priority queue", "kth largest", "top k", "median stream", "min heap", "max heap", "priority"],
+        "gfg_topic": "Heap Data Structure & Priority Queue",
+        "gfg_url": "https://www.geeksforgeeks.org/heap-data-structure/"
     },
     7: {
         "id": 7,
@@ -1730,7 +1787,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Prefix tree node transition on char. Rolling hash: H = (H * B + C) % M",
         "complexity": "Time: O(L) per word, Space: O(N * L * Alphabet)",
         "canonical_examples": ["implement-trie-prefix-tree", "word-search-ii", "longest-duplicate-substring", "group-anagrams", "design-add-and-search-words-data-structure"],
-        "keywords": ["trie", "prefix tree", "hash table", "rolling hash", "rabin karp", "anagram", "hash map", "frequency map"]
+        "keywords": ["trie", "prefix tree", "hash table", "rolling hash", "rabin karp", "anagram", "hash map", "frequency map"],
+        "gfg_topic": "Trie Insert and Search",
+        "gfg_url": "https://www.geeksforgeeks.org/trie-insert-and-search/"
     },
     8: {
         "id": 8,
@@ -1741,7 +1800,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "State(node) = f(State(node.left), State(node.right))",
         "complexity": "Time: O(N), Space: O(H) where H is tree height",
         "canonical_examples": ["lowest-common-ancestor-of-a-binary-tree", "binary-tree-maximum-path-sum", "diameter-of-binary-tree", "house-robber-iii", "serialize-and-deserialize-binary-tree"],
-        "keywords": ["tree", "binary tree", "bst", "lowest common ancestor", "tree dp", "traversal", "postorder", "inorder", "preorder"]
+        "keywords": ["tree", "binary tree", "bst", "lowest common ancestor", "tree dp", "traversal", "postorder", "inorder", "preorder"],
+        "gfg_topic": "Binary Tree & Tree Traversals",
+        "gfg_url": "https://www.geeksforgeeks.org/binary-tree-data-structure/"
     },
     9: {
         "id": 9,
@@ -1752,7 +1813,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Queue tracks frontier level-by-level; Visited set prevents infinite cycles.",
         "complexity": "Time: O(V + E) or O(R * C), Space: O(V + E)",
         "canonical_examples": ["number-of-islands", "rotting-oranges", "pacific-atlantic-water-flow", "word-ladder", "clone-graph", "cheapest-flights-within-k-stops"],
-        "keywords": ["graph", "bfs", "dfs", "matrix", "grid", "islands", "shortest path", "flood fill", "dijkstra", "bipartite"]
+        "keywords": ["graph", "bfs", "dfs", "matrix", "grid", "islands", "shortest path", "flood fill", "dijkstra", "bipartite"],
+        "gfg_topic": "Graph Data Structure & BFS/DFS",
+        "gfg_url": "https://www.geeksforgeeks.org/graph-data-structure-and-algorithms/"
     },
     10: {
         "id": 10,
@@ -1763,7 +1826,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "DSU: Find(x) == Find(y) | Topo: indegree == 0 nodes enter queue first.",
         "complexity": "Time: O((V+E) * alpha(V)) or O(V+E), Space: O(V+E)",
         "canonical_examples": ["course-schedule", "course-schedule-ii", "redundant-connection", "graph-valid-tree", "accounts-merge", "number-of-provinces"],
-        "keywords": ["union find", "dsu", "topological sort", "indegree", "cycle detection", "disjoint set", "course schedule", "connected components"]
+        "keywords": ["union find", "dsu", "topological sort", "indegree", "cycle detection", "disjoint set", "course schedule", "connected components"],
+        "gfg_topic": "Disjoint Set Union (Union-Find)",
+        "gfg_url": "https://www.geeksforgeeks.org/disjoint-set-data-structures/"
     },
     11: {
         "id": 11,
@@ -1774,7 +1839,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Choose -> Explore -> Unchoose (backtrack state restore)",
         "complexity": "Time: O(K^N) or O(N!), Space: O(N) recursion stack",
         "canonical_examples": ["subsets", "permutations", "n-queens", "sudoku-solver", "word-search", "combination-sum", "palindrome-partitioning"],
-        "keywords": ["backtracking", "subsets", "permutations", "combinations", "n queens", "pruning", "dfs search", "sudoku", "combination sum"]
+        "keywords": ["backtracking", "subsets", "permutations", "combinations", "n queens", "pruning", "dfs search", "sudoku", "combination sum"],
+        "gfg_topic": "Backtracking Algorithms",
+        "gfg_url": "https://www.geeksforgeeks.org/backtracking-algorithms/"
     },
     12: {
         "id": 12,
@@ -1785,7 +1852,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "low <= high; monotonic predicate condition divides search space.",
         "complexity": "Time: O(N log(SearchSpace)), Space: O(1)",
         "canonical_examples": ["koko-eating-bananas", "capacity-to-ship-packages-within-d-days", "split-array-largest-sum", "find-first-and-last-position-of-element-in-sorted-array", "search-in-rotated-sorted-array"],
-        "keywords": ["binary search", "search space", "monotonic", "koko", "capacity", "optimal boundary", "bisect", "rotated sorted"]
+        "keywords": ["binary search", "search space", "monotonic", "koko", "capacity", "optimal boundary", "bisect", "rotated sorted"],
+        "gfg_topic": "Binary Search Algorithms",
+        "gfg_url": "https://www.geeksforgeeks.org/binary-search/"
     },
     13: {
         "id": 13,
@@ -1796,7 +1865,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "DP[state] = optimal_transition(DP[sub_states])",
         "complexity": "Time: O(States * Transitions), Space: O(States)",
         "canonical_examples": ["climbing-stairs", "house-robber", "longest-common-subsequence", "coin-change", "burst-balloons", "edit-distance", "target-sum"],
-        "keywords": ["dynamic programming", "memoization", "knapsack", "subsequence", "interval dp", "bitmask dp", "state transition", "dp", "longest common"]
+        "keywords": ["dynamic programming", "memoization", "knapsack", "subsequence", "interval dp", "bitmask dp", "state transition", "dp", "longest common"],
+        "gfg_topic": "Dynamic Programming (DP)",
+        "gfg_url": "https://www.geeksforgeeks.org/dynamic-programming/"
     },
     14: {
         "id": 14,
@@ -1807,7 +1878,9 @@ ARCHETYPES_TAXONOMY: Dict[int, Dict[str, Any]] = {
         "invariant": "Sort by start/end time. Greedy choice property guarantees global optimum.",
         "complexity": "Time: O(N log N), Space: O(1) or O(N)",
         "canonical_examples": ["merge-intervals", "non-overlapping-intervals", "task-scheduler", "gas-station", "jump-game", "minimum-number-of-arrows-to-burst-balloons"],
-        "keywords": ["greedy", "intervals", "merge intervals", "interval scheduling", "locally optimal", "jump game", "gas station", "interval"]
+        "keywords": ["greedy", "intervals", "merge intervals", "interval scheduling", "locally optimal", "jump game", "gas station", "interval"],
+        "gfg_topic": "Greedy Algorithms",
+        "gfg_url": "https://www.geeksforgeeks.org/greedy-algorithms/"
     }
 }
 
@@ -1819,13 +1892,154 @@ CORE_PARADIGMS = [
 ]
 
 ROADMAP_PHASES = [
-    {"phase": "Phase 1: Linear Pointer Mechanics (Weeks 1-2)", "archetypes": [0, 1, 2, 3], "goal": "Shift from O(N^2) brute force to O(N) single-pass time complexity."},
-    {"phase": "Phase 2: Core Linear Data Structures (Weeks 3-4)", "archetypes": [4, 5, 6, 7], "goal": "Solve order-dependent and range-query problems efficiently without extra re-sorting."},
-    {"phase": "Phase 3: Hierarchical Structures & Search Space (Weeks 5-6)", "archetypes": [8, 12], "goal": "Master divide-and-conquer logic and monotonic functions."},
-    {"phase": "Phase 4: Graph Theory & Combinatorial Search (Weeks 7-8)", "archetypes": [9, 10, 11], "goal": "Model real-world dependency networks and state-space prunings."},
-    {"phase": "Phase 5: Advanced Optimization & State Transitions (Weeks 9-11)", "archetypes": [13, 14], "goal": "Recognize state transition equations and convert exponential recursion into polynomial time."},
-    {"phase": "Phase 6: Composite Patterns & Advanced Structures (Weeks 12+)", "archetypes": [7, 13], "goal": "Handle edge cases under strict O(N log N) or O(1) constraints."}
+    {
+        "phase": "Phase 1: Linear Traversals & Pointer Mechanics",
+        "weeks": "Weeks 1–2",
+        "archetypes": [0, 1, 2, 3],
+        "goal": "Shift from O(N²) brute force to O(N) single-pass time complexity.",
+        "mechanics": "Converging/diverging bounds, range queries, and subarray optimization.",
+        "gfg_links": [
+            {"title": "GFG Array Data Structure", "url": "https://www.geeksforgeeks.org/array-data-structure/"},
+            {"title": "GFG Searching Algorithms", "url": "https://www.geeksforgeeks.org/searching-algorithms/"}
+        ]
+    },
+    {
+        "phase": "Phase 2: Core Linear Data Structures & Memory",
+        "weeks": "Weeks 3–4",
+        "archetypes": [4, 5, 6, 7],
+        "goal": "Solve order-dependent and range-query problems efficiently without extra re-sorting.",
+        "mechanics": "Tracking next greater elements, O(1) lookups, and top-K elements.",
+        "gfg_links": [
+            {"title": "GFG Stack Data Structure", "url": "https://www.geeksforgeeks.org/stack-data-structure/"},
+            {"title": "GFG Hashing Data Structure", "url": "https://www.geeksforgeeks.org/hashing-data-structure/"}
+        ]
+    },
+    {
+        "phase": "Phase 3: Hierarchical Data & Search Space",
+        "weeks": "Weeks 5–6",
+        "archetypes": [8, 12],
+        "goal": "Master divide-and-conquer logic, tree recursion, and monotonic answer spaces.",
+        "mechanics": "In/Pre/Post-order traversals, lowest common ancestors, and monotonic decision boundaries.",
+        "gfg_links": [
+            {"title": "GFG Binary Tree", "url": "https://www.geeksforgeeks.org/binary-tree-data-structure/"},
+            {"title": "GFG Binary Search", "url": "https://www.geeksforgeeks.org/binary-search/"}
+        ]
+    },
+    {
+        "phase": "Phase 4: Graph Theory & Combinatorial Search",
+        "weeks": "Weeks 7–8",
+        "archetypes": [9, 10, 11],
+        "goal": "Model real-world dependency networks and state-space tree prunings.",
+        "mechanics": "Shortest paths, connected components, dependency graph modeling, and combinatorial DFS.",
+        "gfg_links": [
+            {"title": "GFG Graph Data Structure", "url": "https://www.geeksforgeeks.org/graph-data-structure-and-algorithms/"},
+            {"title": "GFG Backtracking Algorithms", "url": "https://www.geeksforgeeks.org/backtracking-algorithms/"}
+        ]
+    },
+    {
+        "phase": "Phase 5: Advanced Optimization & State Transitions",
+        "weeks": "Weeks 9–11",
+        "archetypes": [13, 14],
+        "goal": "Recognize state transition equations and convert exponential recursion into polynomial time.",
+        "mechanics": "Overlapping subproblems, state transitions, and interval scheduling.",
+        "gfg_links": [
+            {"title": "GFG Dynamic Programming", "url": "https://www.geeksforgeeks.org/dynamic-programming/"},
+            {"title": "GFG Greedy Algorithms", "url": "https://www.geeksforgeeks.org/greedy-algorithms/"}
+        ]
+    },
+    {
+        "phase": "Phase 6: Composite Patterns & Advanced Structures",
+        "weeks": "Weeks 12+",
+        "archetypes": [6, 7, 13],
+        "goal": "Handle edge cases under strict O(N log N) or O(1) space constraints.",
+        "mechanics": "Bitmask DP, custom Trie dictionaries, and multi-paradigm combinations.",
+        "gfg_links": [
+            {"title": "GFG Bitmasking and DP", "url": "https://www.geeksforgeeks.org/bitmasking-and-dynamic-programming/"},
+            {"title": "GFG Segment Tree", "url": "https://www.geeksforgeeks.org/segment-tree-data-structure/"}
+        ]
+    }
 ]
+
+
+class MultiLabelPatternClassifier:
+    """
+    NLP Multi-Label Pattern Classifier.
+    Predicts multiple overlapping DSA patterns (e.g. Dynamic Programming, Sliding Window)
+    from unannotated raw problem descriptions using BCE-calibrated probabilities.
+    """
+    def __init__(self, n_archetypes: int = 15):
+        self.n_archetypes = n_archetypes
+        self.vectorizer = TfidfVectorizer(
+            max_features=6000,
+            sublinear_tf=True,
+            ngram_range=(1, 3),
+            stop_words="english",
+            min_df=2
+        )
+        self.classifiers = [
+            LogisticRegression(class_weight="balanced", max_iter=400, random_state=42 + i, C=1.5)
+            for i in range(n_archetypes)
+        ]
+        self.is_fitted = False
+
+    def fit(self, texts: List[str], multi_hot_labels: np.ndarray):
+        X_vec = self.vectorizer.fit_transform([clean_problem_text_for_nlp(t) for t in texts])
+        for i in range(self.n_archetypes):
+            y_i = multi_hot_labels[:, i]
+            if len(np.unique(y_i)) > 1:
+                self.classifiers[i].fit(X_vec, y_i)
+        self.is_fitted = True
+        return self
+
+    def predict_patterns(self, text: str, threshold: float = 0.25, top_k: int = 5) -> List[Dict[str, Any]]:
+        cleaned = clean_problem_text_for_nlp(text)
+        if not self.is_fitted:
+            # Fallback heuristic prediction
+            pred_id = classify_problem_to_archetype({"problem_description": text, "title": text})
+            arch = ARCHETYPES_TAXONOMY.get(pred_id, ARCHETYPES_TAXONOMY[0])
+            return [{
+                "archetype_id": pred_id,
+                "name": arch["name"],
+                "paradigm": arch["paradigm"],
+                "probability": 0.85,
+                "confidence_pct": 85.0,
+                "invariant": arch["invariant"],
+                "complexity": arch["complexity"],
+                "gfg_topic": arch["gfg_topic"],
+                "gfg_url": arch["gfg_url"]
+            }]
+
+        X_vec = self.vectorizer.transform([cleaned])
+        scored = []
+        for i in range(self.n_archetypes):
+            arch = ARCHETYPES_TAXONOMY[i]
+            prob = 0.0
+            if hasattr(self.classifiers[i], "predict_proba"):
+                prob = float(self.classifiers[i].predict_proba(X_vec)[0, 1])
+            
+            # Boost canonical keyword detections
+            for kw in arch.get("keywords", []):
+                if kw in cleaned:
+                    prob = min(0.98, prob + 0.20)
+
+            scored.append({
+                "archetype_id": i,
+                "name": arch["name"],
+                "paradigm": arch["paradigm"],
+                "probability": round(prob, 4),
+                "confidence_pct": round(prob * 100, 1),
+                "invariant": arch["invariant"],
+                "complexity": arch["complexity"],
+                "gfg_topic": arch["gfg_topic"],
+                "gfg_url": arch["gfg_url"],
+                "canonical_examples": arch["canonical_examples"]
+            })
+
+        scored.sort(key=lambda x: x["probability"], reverse=True)
+        # Filter by threshold or return top_k
+        filtered = [s for s in scored if s["probability"] >= threshold]
+        return filtered[:top_k] if filtered else scored[:top_k]
+
 
 
 def classify_problem_to_archetype(row) -> int:
@@ -2054,6 +2268,7 @@ class LeetCodeIntelligenceEngine:
         self.topic_classifier = TopicClassifier()
         self.company_classifier = CompanyClassifier()
         self.cluster_engine = ProblemClusterEngine()
+        self.pattern_classifier = MultiLabelPatternClassifier(n_archetypes=15)
         self.df: Optional[pd.DataFrame] = None
         self.X_features: Optional[csr_matrix] = None
         self.is_ready = False
@@ -2075,6 +2290,25 @@ class LeetCodeIntelligenceEngine:
         print("--- Fitting Problem Cluster Engine ---")
         self.cluster_engine.fit(self.X_features, df_full, self.feature_extractor)
 
+        print("--- Fitting Multi-Label Pattern Classifier ---")
+        labels = np.zeros((len(df_full), 15), dtype=int)
+        for i, (_, row) in enumerate(df_full.iterrows()):
+            c_id = row.get("cluster_id")
+            if pd.notna(c_id) and 0 <= int(c_id) < 15:
+                labels[i, int(c_id)] = 1
+            tag_str = " ".join(row.get("topic_tags", [])) if isinstance(row.get("topic_tags"), list) else str(row.get("topic_tags", ""))
+            if "dynamic programming" in tag_str.lower(): labels[i, 13] = 1
+            if "sliding window" in tag_str.lower(): labels[i, 1] = 1
+            if "two pointers" in tag_str.lower(): labels[i, 0] = 1
+            if "binary search" in tag_str.lower(): labels[i, 12] = 1
+            if "tree" in tag_str.lower(): labels[i, 8] = 1
+            if "graph" in tag_str.lower(): labels[i, 9] = 1
+            if "backtracking" in tag_str.lower(): labels[i, 11] = 1
+            if "greedy" in tag_str.lower(): labels[i, 14] = 1
+
+        descriptions = df_full["problem_description"].fillna(df_full["task_id"]).tolist()
+        self.pattern_classifier.fit(descriptions, labels)
+
         self.df = df_full.copy()
         self.df["cluster_id"] = [self.cluster_engine.kmeans.predict(self.X_features[i])[0] for i in range(len(df_full))]
         self.df["cluster_title"] = self.df["cluster_id"].map(self.cluster_engine.cluster_labels)
@@ -2086,6 +2320,7 @@ class LeetCodeIntelligenceEngine:
         joblib.dump(self.topic_classifier, os.path.join(self.models_dir, "topic_classifier.joblib"))
         joblib.dump(self.company_classifier, os.path.join(self.models_dir, "company_classifier.joblib"))
         joblib.dump(self.cluster_engine, os.path.join(self.models_dir, "cluster_engine.joblib"))
+        joblib.dump(self.pattern_classifier, os.path.join(self.models_dir, "pattern_classifier.joblib"))
         joblib.dump(self.X_features, os.path.join(self.models_dir, "X_features.joblib"))
         
         self.df.to_parquet(os.path.join(OUTPUT_DIR, "leetcode_with_companies_and_clusters.parquet"), index=False)
@@ -2114,8 +2349,33 @@ class LeetCodeIntelligenceEngine:
             self.df["cluster_id"] = [self.cluster_engine.kmeans.predict(self.X_features[i])[0] for i in range(len(self.df))]
             self.df["cluster_title"] = self.df["cluster_id"].map(self.cluster_engine.cluster_labels)
 
+        # Fit lightweight multi-label pattern classifier
+        self.pattern_classifier = MultiLabelPatternClassifier(n_archetypes=15)
+        labels = np.zeros((len(self.df), 15), dtype=int)
+        for i, (_, row) in enumerate(self.df.iterrows()):
+            c_id = row.get("cluster_id")
+            if pd.notna(c_id) and 0 <= int(c_id) < 15:
+                labels[i, int(c_id)] = 1
+            tag_str = " ".join(row.get("topic_tags", [])) if isinstance(row.get("topic_tags"), list) else str(row.get("topic_tags", ""))
+            if "dynamic programming" in tag_str.lower(): labels[i, 13] = 1
+            if "sliding window" in tag_str.lower(): labels[i, 1] = 1
+            if "two pointers" in tag_str.lower(): labels[i, 0] = 1
+            if "binary search" in tag_str.lower(): labels[i, 12] = 1
+            if "tree" in tag_str.lower(): labels[i, 8] = 1
+            if "graph" in tag_str.lower(): labels[i, 9] = 1
+            if "backtracking" in tag_str.lower(): labels[i, 11] = 1
+            if "greedy" in tag_str.lower(): labels[i, 14] = 1
+
+        descriptions = self.df["problem_description"].fillna(self.df["task_id"]).tolist()
+        self.pattern_classifier.fit(descriptions, labels)
+
         self.is_ready = True
         print("Models successfully loaded and ready.")
+
+    def predict_patterns(self, text: str, title: str = "", top_k: int = 5) -> List[Dict[str, Any]]:
+        """Predicts multi-label algorithmic patterns from problem text."""
+        full_text = f"{title}\n{text}" if title else text
+        return self.pattern_classifier.predict_patterns(full_text, threshold=0.20, top_k=top_k)
 
     def autoclassify_and_enrich(self, raw_problem: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -3090,6 +3350,207 @@ def run_agent_loop(interval_seconds: float = 5.0, max_iterations: int = None):
 
 if __name__ == "__main__":
     run_agent_loop(interval_seconds=5.0)
+
+```
+
+---
+
+
+## 📄 File: `train_pattern_transformer.py`
+
+```python
+"""
+CodeBERT / Transformer Multi-Label Fine-Tuning Pipeline for DSA Pattern Classification
+
+Frames LeetCode problem description understanding as an NLP Multi-Label Text Classification task
+mapping text embeddings to the 15 Unified Algorithmic Archetypes using Binary Cross-Entropy Loss.
+"""
+
+import os
+import json
+import argparse
+import numpy as np
+import pandas as pd
+import torch
+from typing import Dict, Any, List
+
+try:
+    from datasets import Dataset
+    from transformers import (
+        AutoTokenizer,
+        AutoModelForSequenceClassification,
+        TrainingArguments,
+        Trainer,
+        EvalPrediction
+    )
+    from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
+    HAS_TRANSFORMERS = True
+except ImportError:
+    HAS_TRANSFORMERS = False
+
+from ml_models import ARCHETYPES_TAXONOMY, clean_problem_text_for_nlp
+
+MODEL_NAME = "microsoft/codebert-base"
+NUM_ARCHETYPES = 15
+
+
+def load_problem_dataset(parquet_path: str = "output/leetcode_with_companies_and_clusters.parquet"):
+    if not os.path.exists(parquet_path):
+        parquet_path = "output/leetcode_with_companies_full.parquet"
+    
+    df = pd.read_parquet(parquet_path)
+    print(f"Loaded {len(df)} problems from {parquet_path}")
+
+    # Build multi-hot label matrix
+    multi_hot_labels = []
+    descriptions = []
+
+    for _, row in df.iterrows():
+        label_vec = [0.0] * NUM_ARCHETYPES
+        c_id = row.get("cluster_id")
+        if pd.notna(c_id) and 0 <= int(c_id) < NUM_ARCHETYPES:
+            label_vec[int(c_id)] = 1.0
+
+        tag_str = " ".join(row.get("topic_tags", [])) if isinstance(row.get("topic_tags"), list) else str(row.get("topic_tags", ""))
+        if "dynamic programming" in tag_str.lower(): label_vec[13] = 1.0
+        if "sliding window" in tag_str.lower(): label_vec[1] = 1.0
+        if "two pointers" in tag_str.lower(): label_vec[0] = 1.0
+        if "binary search" in tag_str.lower(): label_vec[12] = 1.0
+        if "tree" in tag_str.lower(): label_vec[8] = 1.0
+        if "graph" in tag_str.lower(): label_vec[9] = 1.0
+        if "backtracking" in tag_str.lower(): label_vec[11] = 1.0
+        if "greedy" in tag_str.lower(): label_vec[14] = 1.0
+
+        raw_desc = str(row.get("problem_description", "")) or str(row.get("task_id", ""))
+        cleaned = clean_problem_text_for_nlp(raw_desc)
+        
+        descriptions.append(cleaned)
+        multi_hot_labels.append(label_vec)
+
+    return pd.DataFrame({"description": descriptions, "labels": multi_hot_labels})
+
+
+def compute_metrics(p: "EvalPrediction"):
+    preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
+    probs = 1 / (1 + np.exp(-preds))
+    y_pred = np.where(probs >= 0.5, 1, 0)
+    y_true = p.label_ids
+    return {
+        'f1_micro': float(f1_score(y_true, y_pred, average='micro', zero_division=0)),
+        'f1_macro': float(f1_score(y_true, y_pred, average='macro', zero_division=0)),
+        'accuracy': float(accuracy_score(y_true, y_pred))
+    }
+
+
+def train_codebert_classifier(output_dir: str = "./leetcode-pattern-codebert", epochs: int = 4, batch_size: int = 8):
+    if not HAS_TRANSFORMERS:
+        print("[ERROR] 'transformers' and 'datasets' packages are required for CodeBERT training.")
+        print("Run: pip install transformers datasets torch accelerate")
+        return
+
+    print(f"--- Fine-Tuning CodeBERT on 15 Algorithmic Archetypes ---")
+    df = load_problem_dataset()
+    dataset = Dataset.from_pandas(df)
+
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+
+    def preprocess_function(examples):
+        batch = tokenizer(
+            examples["description"],
+            padding="max_length",
+            truncation=True,
+            max_length=512
+        )
+        batch["labels"] = [[float(l) for l in label] for label in examples["labels"]]
+        return batch
+
+    encoded_dataset = dataset.map(preprocess_function, batched=True)
+    split_dataset = encoded_dataset.train_test_split(test_size=0.15, seed=42)
+
+    model = AutoModelForSequenceClassification.from_pretrained(
+        MODEL_NAME,
+        num_labels=NUM_ARCHETYPES,
+        problem_type="multi_label_classification"
+    )
+
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        learning_rate=3e-5,
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
+        num_train_epochs=epochs,
+        weight_decay=0.01,
+        load_best_model_at_end=True,
+        metric_for_best_model="f1_macro",
+        logging_steps=50
+    )
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=split_dataset["train"],
+        eval_dataset=split_dataset["test"],
+        tokenizer=tokenizer,
+        compute_metrics=compute_metrics
+    )
+
+    print("Starting PyTorch training loop...")
+    trainer.train()
+    print(f"[SUCCESS] Model saved to {output_dir}")
+
+
+def predict_pattern_standalone(text: str, model_dir: str = "./leetcode-pattern-codebert", threshold: float = 0.3):
+    if not HAS_TRANSFORMERS or not os.path.exists(model_dir):
+        print(f"Transformer model not found at {model_dir}. Using Scikit-Learn MultiLabelPatternClassifier fallback.")
+        from ml_models import LeetCodeIntelligenceEngine
+        engine = LeetCodeIntelligenceEngine()
+        engine.load_models()
+        return engine.predict_patterns(text)
+
+    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    model = AutoModelForSequenceClassification.from_pretrained(model_dir)
+    model.eval()
+
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
+    with torch.no_grad():
+        outputs = model(**inputs)
+        probs = torch.sigmoid(outputs.logits).cpu().numpy()[0]
+
+    results = []
+    for i in range(NUM_ARCHETYPES):
+        arch = ARCHETYPES_TAXONOMY[i]
+        results.append({
+            "archetype_id": i,
+            "name": arch["name"],
+            "paradigm": arch["paradigm"],
+            "probability": round(float(probs[i]), 4),
+            "confidence_pct": round(float(probs[i]) * 100, 1),
+            "invariant": arch["invariant"],
+            "gfg_topic": arch["gfg_topic"],
+            "gfg_url": arch["gfg_url"]
+        })
+    results.sort(key=lambda x: x["probability"], reverse=True)
+    return results
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="CodeBERT Multi-Label DSA Pattern Classifier")
+    parser.add_argument("--train", action="store_true", help="Train the CodeBERT model")
+    parser.add_argument("--epochs", type=int, default=4, help="Number of training epochs")
+    parser.add_argument("--text", type=str, help="Problem text to classify")
+    args = parser.parse_args()
+
+    if args.train:
+        train_codebert_classifier(epochs=args.epochs)
+    elif args.text:
+        preds = predict_pattern_standalone(args.text)
+        print(json.dumps(preds, indent=2))
+    else:
+        print("Usage:")
+        print("  Train:   python train_pattern_transformer.py --train --epochs 4")
+        print("  Predict: python train_pattern_transformer.py --text 'Given an array of integers nums and target, find subarray sum'")
 
 ```
 
@@ -5038,7 +5499,13 @@ import {
   CheckCircle2, 
   HelpCircle,
   Cpu,
-  BookOpen
+  BookOpen,
+  BrainCircuit,
+  Binary,
+  Send,
+  Loader2,
+  Terminal,
+  BookmarkCheck
 } from 'lucide-react';
 
 const clusterVariants = {
@@ -5075,10 +5542,16 @@ const paradigmIcons = {
 
 export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem, onFilterExplorerByCluster }) {
   const clusters = metadata.clusters || [];
-  const [viewMode, setViewMode] = useState('taxonomy'); // 'taxonomy' | 'roadmap'
+  const [viewMode, setViewMode] = useState('taxonomy'); // 'taxonomy' | 'roadmap' | 'classifier'
   const [selectedParadigm, setSelectedParadigm] = useState('All');
   const [selectedCluster, setSelectedCluster] = useState(null);
   const [activeTierTab, setActiveTierTab] = useState('Easy-Medium');
+
+  // NLP Pattern Classifier State
+  const [classifierInput, setClassifierInput] = useState('');
+  const [classifierTitle, setClassifierTitle] = useState('');
+  const [isClassifying, setIsClassifying] = useState(false);
+  const [predictedPatterns, setPredictedPatterns] = useState(null);
 
   const paradigms = ['All', 'Linear Pointer Patterns', 'Linear Structures & Specialized Memory', 'Tree, Graph & Search Space Traversal', 'Optimization & State Space Paradigms'];
 
@@ -5094,48 +5567,102 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
     setActiveTierTab(firstNonEmpty);
   };
 
+  const handleClassifyProblem = async () => {
+    if (!classifierInput.trim()) return;
+    setIsClassifying(true);
+    try {
+      const res = await fetch('/api/predict/pattern', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: classifierTitle,
+          description: classifierInput,
+          top_k: 5
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setPredictedPatterns(data.data);
+      }
+    } catch (err) {
+      console.error("Pattern classification error:", err);
+    } finally {
+      setIsClassifying(false);
+    }
+  };
+
   const roadmapPhases = [
     {
-      phase: "Phase 1: Linear Pointer Mechanics",
+      phase: "Phase 1: Linear Traversals & Pointer Mechanics",
       weeks: "Weeks 1–2",
       goal: "Shift from O(N²) brute force to O(N) single-pass time complexity.",
+      mechanics: "Converging/diverging bounds, range queries, and subarray optimization.",
       archetypeIds: [0, 1, 2, 3],
-      keyTakeaways: "Master left/right monotonic convergence, sliding window expansion/contraction, and cumulative prefix lookup."
+      keyTakeaways: "Master left/right monotonic convergence, sliding window expansion/contraction, and cumulative prefix lookup.",
+      gfgLinks: [
+        { title: "GFG Arrays Data Structure", url: "https://www.geeksforgeeks.org/array-data-structure/" },
+        { title: "GFG Searching Algorithms", url: "https://www.geeksforgeeks.org/searching-algorithms/" }
+      ]
     },
     {
-      phase: "Phase 2: Core Linear Data Structures",
+      phase: "Phase 2: Core Linear Data Structures & Memory",
       weeks: "Weeks 3–4",
       goal: "Solve order-dependent and range-query problems efficiently without re-sorting.",
+      mechanics: "Tracking next greater elements, O(1) lookups, and top-K elements.",
       archetypeIds: [4, 5, 6, 7],
-      keyTakeaways: "Strict monotonic sequence maintenance, in-place cyclic swaps, and top-K binary heap properties."
+      keyTakeaways: "Strict monotonic sequence maintenance, in-place cyclic swaps, and top-K binary heap properties.",
+      gfgLinks: [
+        { title: "GFG Stack Data Structure", url: "https://www.geeksforgeeks.org/stack-data-structure/" },
+        { title: "GFG Hashing Data Structure", url: "https://www.geeksforgeeks.org/hashing-data-structure/" }
+      ]
     },
     {
-      phase: "Phase 3: Hierarchical Structures & Search Space",
+      phase: "Phase 3: Hierarchical Data & Search Space",
       weeks: "Weeks 5–6",
       goal: "Master divide-and-conquer logic, tree recursion, and monotonic answer spaces.",
+      mechanics: "In/Pre/Post-order traversals, lowest common ancestors, and monotonic decision boundaries.",
       archetypeIds: [8, 12],
-      keyTakeaways: "Bottom-up tree state propagation and binary search over continuous or discrete monotonic predicate functions."
+      keyTakeaways: "Bottom-up tree state propagation and binary search over continuous or discrete monotonic predicate functions.",
+      gfgLinks: [
+        { title: "GFG Binary Tree", url: "https://www.geeksforgeeks.org/binary-tree-data-structure/" },
+        { title: "GFG Binary Search", url: "https://www.geeksforgeeks.org/binary-search/" }
+      ]
     },
     {
       phase: "Phase 4: Graph Theory & Combinatorial Search",
       weeks: "Weeks 7–8",
       goal: "Model real-world dependency networks and state-space tree prunings.",
+      mechanics: "Shortest paths, connected components, dependency graph modeling, and combinatorial DFS.",
       archetypeIds: [9, 10, 11],
-      keyTakeaways: "Level-order matrix BFS, cycle detection with DSU, topological DAG ordering, and backtracking state restoration."
+      keyTakeaways: "Level-order matrix BFS, cycle detection with DSU, topological DAG ordering, and backtracking state restoration.",
+      gfgLinks: [
+        { title: "GFG Graph Data Structure", url: "https://www.geeksforgeeks.org/graph-data-structure-and-algorithms/" },
+        { title: "GFG Backtracking Algorithms", url: "https://www.geeksforgeeks.org/backtracking-algorithms/" }
+      ]
     },
     {
       phase: "Phase 5: Advanced Optimization & State Transitions",
       weeks: "Weeks 9–11",
       goal: "Recognize state transition equations and convert exponential recursion to polynomial time.",
+      mechanics: "Overlapping subproblems, state transitions, and interval scheduling.",
       archetypeIds: [13, 14],
-      keyTakeaways: "1D/2D memoization tables, rolling array space optimization, interval partitions, and greedy sorting invariants."
+      keyTakeaways: "1D/2D memoization tables, rolling array space optimization, interval partitions, and greedy sorting invariants.",
+      gfgLinks: [
+        { title: "GFG Dynamic Programming", url: "https://www.geeksforgeeks.org/dynamic-programming/" },
+        { title: "GFG Greedy Algorithms", url: "https://www.geeksforgeeks.org/greedy-algorithms/" }
+      ]
     },
     {
       phase: "Phase 6: Composite Patterns & Advanced Structures",
       weeks: "Weeks 12+",
-      goal: "Handle high-constraint edge cases under strict O(N log N) or O(1) limits.",
+      goal: "Handle high-constraint edge cases under strict O(N log N) or O(1) space limits.",
+      mechanics: "Bitmask DP, custom Trie dictionaries, and multi-paradigm combinations.",
       archetypeIds: [6, 7, 13],
-      keyTakeaways: "Bitmask DP, custom Trie dictionaries, and multi-paradigm combinations (Binary Search + BFS, DP + Monotonic Stack)."
+      keyTakeaways: "Bitmask DP, custom Trie dictionaries, and multi-paradigm combinations (Binary Search + BFS, DP + Monotonic Stack).",
+      gfgLinks: [
+        { title: "GFG Bitmasking and DP", url: "https://www.geeksforgeeks.org/bitmasking-and-dynamic-programming/" },
+        { title: "GFG Segment Tree", url: "https://www.geeksforgeeks.org/segment-tree-data-structure/" }
+      ]
     }
   ];
 
@@ -5147,14 +5674,14 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
           <div className="flex items-center gap-2">
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <Layers className="w-5 h-5 text-indigo-400" />
-              <span>Unified 15-Archetype Taxonomy & Mastery Roadmap</span>
+              <span>Unified 15-Archetype Taxonomy & GFG Mastery Roadmap</span>
             </h3>
             <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[11px] font-mono">
               Zero Duplication
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            2,870 LeetCode challenges partitioned into 15 algorithmic mechanics across 4 Core Paradigms with 5-tier difficulty stratification.
+            2,870 LeetCode challenges mapped into 15 algorithmic mechanics across 4 Core Paradigms, NLP multi-label pattern classifier, and GeeksforGeeks learning paths.
           </p>
         </div>
 
@@ -5181,7 +5708,19 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
             }`}
           >
             <Milestone className="w-3.5 h-3.5" />
-            <span>6-Phase Roadmap</span>
+            <span>GFG Roadmap</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('classifier')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              viewMode === 'classifier'
+                ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <BrainCircuit className="w-3.5 h-3.5 text-cyan-300" />
+            <span>NLP Pattern Classifier</span>
           </button>
         </div>
       </div>
@@ -5290,7 +5829,7 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
         </div>
       )}
 
-      {/* Mode B: 6-Phase Chronological Mastery Roadmap */}
+      {/* Mode B: 6-Phase Chronological Mastery Roadmap + GeeksforGeeks Links */}
       {viewMode === 'roadmap' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -5307,37 +5846,215 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
                     <span className="px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 text-[10px] font-mono">
                       {phase.weeks}
                     </span>
-                    <span className="text-[10px] font-mono text-slate-500">Step 0{idx + 1}</span>
+                    <span className="text-[10px] font-mono text-slate-500">Phase 0{idx + 1}</span>
                   </div>
 
                   <h4 className="text-sm font-bold text-slate-100">{phase.phase}</h4>
                   <p className="text-xs text-indigo-300 font-medium">{phase.goal}</p>
+                  
+                  <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1">
+                    <span className="text-[10px] font-semibold uppercase text-cyan-400 tracking-wider flex items-center gap-1">
+                      <Code2 className="w-3 h-3" /> Problem Mechanics
+                    </span>
+                    <p className="text-[11px] text-slate-300">{phase.mechanics}</p>
+                  </div>
+
                   <p className="text-xs text-slate-400 leading-relaxed">{phase.keyTakeaways}</p>
                 </div>
 
-                <div className="space-y-2 pt-3 border-t border-slate-800">
-                  <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
-                    Core Archetypes Covered
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {phase.archetypeIds.map((id) => {
-                      const arch = clusters.find(c => c.cluster_id === id);
-                      if (!arch) return null;
-                      return (
-                        <button
-                          key={id}
-                          onClick={() => handleOpenClusterModal(arch)}
-                          className="text-[11px] px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 flex items-center gap-1 transition-colors"
+                <div className="space-y-3 pt-3 border-t border-slate-800">
+                  {/* GeeksforGeeks (GFG) Curated Topic Links */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] uppercase font-semibold text-emerald-400 tracking-wider flex items-center gap-1">
+                      <BookOpen className="w-3 h-3" /> GeeksforGeeks (GFG) Modules
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {phase.gfgLinks.map((gfg, i) => (
+                        <a
+                          key={i}
+                          href={gfg.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] px-2 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800/80 flex items-center gap-1 transition-colors"
                         >
-                          <span>{arch.title}</span>
-                          <ArrowUpRight className="w-3 h-3 text-slate-500" />
-                        </button>
-                      );
-                    })}
+                          <span>{gfg.title}</span>
+                          <ExternalLink className="w-3 h-3 opacity-70" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Covered Archetypes */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+                      Core Archetypes Covered
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {phase.archetypeIds.map((id) => {
+                        const arch = clusters.find(c => c.cluster_id === id);
+                        if (!arch) return null;
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => handleOpenClusterModal(arch)}
+                            className="text-[11px] px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 flex items-center gap-1 transition-colors"
+                          >
+                            <span>{arch.title}</span>
+                            <ArrowUpRight className="w-3 h-3 text-slate-500" />
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </motion.div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mode C: NLP Multi-Label Pattern Classifier Test Lab */}
+      {viewMode === 'classifier' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Input Form Card */}
+            <div className="lg:col-span-5 glass-panel rounded-2xl p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <BrainCircuit className="w-5 h-5 text-indigo-400" />
+                <h4 className="text-sm font-bold text-slate-100">Multi-Label NLP Pattern Detector</h4>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Paste any raw LeetCode problem description (Markdown or text). The BCE-calibrated model analyzes linguistic cues and mathematical constraints to predict overlapping DSA archetypes.
+              </p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">Problem Title (Optional)</label>
+                  <input
+                    type="text"
+                    value={classifierTitle}
+                    onChange={(e) => setClassifierTitle(e.target.value)}
+                    placeholder="e.g. Subarray Sum Equals K"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">Problem Description / Constraints</label>
+                  <textarea
+                    rows={6}
+                    value={classifierInput}
+                    onChange={(e) => setClassifierInput(e.target.value)}
+                    placeholder="Given an array of integers nums and an integer k, return the total number of continuous subarrays whose sum equals to k..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 resize-none font-mono"
+                  />
+                </div>
+
+                <button
+                  onClick={handleClassifyProblem}
+                  disabled={isClassifying || !classifierInput.trim()}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-md shadow-indigo-500/20"
+                >
+                  {isClassifying ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Evaluating Multi-Label BCE Logits...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Classify Algorithmic Patterns</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* CodeBERT Info Card */}
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-2 mt-4">
+                <div className="flex items-center gap-2 text-cyan-400 text-xs font-semibold">
+                  <Terminal className="w-4 h-4" />
+                  <span>CodeBERT Fine-Tuning Pipeline</span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Run <code className="text-cyan-300 font-mono">python train_pattern_transformer.py --train</code> to fine-tune <code className="text-indigo-300 font-mono">microsoft/codebert-base</code> on the 15 Archetypes using PyTorch and Hugging Face Transformers.
+                </p>
+              </div>
+            </div>
+
+            {/* Prediction Results Display */}
+            <div className="lg:col-span-7 space-y-4">
+              {predictedPatterns ? (
+                <div className="glass-panel rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                      <BookmarkCheck className="w-4 h-4 text-emerald-400" />
+                      <span>Predicted Algorithmic Archetypes</span>
+                    </h4>
+                    <span className="text-xs text-slate-400 font-mono">
+                      Multi-Label BCE Probabilities
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {predictedPatterns.map((pat, idx) => (
+                      <div
+                        key={idx}
+                        className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3 hover:border-slate-700 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+                              {pat.paradigm}
+                            </span>
+                            <h5 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                              <span>{pat.name}</span>
+                              <span className="text-xs font-mono text-cyan-400">
+                                {pat.confidence_pct}% Match
+                              </span>
+                            </h5>
+                          </div>
+
+                          {pat.gfg_url && (
+                            <a
+                              href={pat.gfg_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800 text-xs font-medium flex items-center gap-1 transition-colors"
+                            >
+                              <span>GFG Guide</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+
+                        {/* Probability Progress Bar */}
+                        <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 rounded-full"
+                            style={{ width: `${Math.min(100, pat.confidence_pct)}%` }}
+                          />
+                        </div>
+
+                        {/* Invariant Equation */}
+                        {pat.invariant && (
+                          <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800/80 font-mono text-[11px] text-cyan-300">
+                            {pat.invariant}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="glass-panel rounded-2xl p-12 text-center space-y-3">
+                  <BrainCircuit className="w-12 h-12 text-slate-600 mx-auto" />
+                  <h4 className="text-sm font-bold text-slate-300">Ready to Classify DSA Patterns</h4>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    Enter any technical coding problem statement to identify its underlying algorithmic archetype, mathematical invariants, and GeeksforGeeks study roadmap.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -5368,12 +6085,25 @@ export function ArchetypeClusters({ metadata, onSelectCluster, onInspectProblem,
                   <p className="text-xs text-slate-300">{selectedCluster.description}</p>
                 </div>
 
-                <button
-                  onClick={() => setSelectedCluster(null)}
-                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {selectedCluster.gfg_url && (
+                    <a
+                      href={selectedCluster.gfg_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>GFG Tutorial</span>
+                    </a>
+                  )}
+                  <button
+                    onClick={() => setSelectedCluster(null)}
+                    className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Invariant & Complexity Callout */}
