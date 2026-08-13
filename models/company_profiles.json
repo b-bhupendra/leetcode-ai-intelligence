@@ -1,0 +1,808 @@
+{
+  "adobe": {
+    "company_name": "ADOBE",
+    "total_questions_in_bank": 209,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "airbnb": {
+    "company_name": "AIRBNB",
+    "total_questions_in_bank": 50,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "valid-parentheses",
+      "add-two-numbers",
+      "trapping-rain-water",
+      "merge-k-sorted-lists"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "akuna-capital": {
+    "company_name": "AKUNA-CAPITAL",
+    "total_questions_in_bank": 22,
+    "primary_topics": {},
+    "signature_problems": [
+      "valid-parentheses",
+      "3sum",
+      "best-time-to-buy-and-sell-stock",
+      "rotate-image",
+      "string-compression"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "alibaba": {
+    "company_name": "ALIBABA",
+    "total_questions_in_bank": 32,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "merge-intervals",
+      "3sum",
+      "best-time-to-buy-and-sell-stock"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "amazon": {
+    "company_name": "AMAZON",
+    "total_questions_in_bank": 641,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "apple": {
+    "company_name": "APPLE",
+    "total_questions_in_bank": 308,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "atlassian": {
+    "company_name": "ATLASSIAN",
+    "total_questions_in_bank": 44,
+    "primary_topics": {},
+    "signature_problems": [
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "best-time-to-buy-and-sell-stock",
+      "merge-k-sorted-lists"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "audible": {
+    "company_name": "AUDIBLE",
+    "total_questions_in_bank": 16,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "best-time-to-buy-and-sell-stock",
+      "trapping-rain-water"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "baidu": {
+    "company_name": "BAIDU",
+    "total_questions_in_bank": 23,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "3sum",
+      "add-two-numbers",
+      "search-in-rotated-sorted-array",
+      "longest-substring-without-repeating-characters"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "bloomberg": {
+    "company_name": "BLOOMBERG",
+    "total_questions_in_bank": 295,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "bytedance": {
+    "company_name": "BYTEDANCE",
+    "total_questions_in_bank": 109,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "merge-intervals",
+      "3sum",
+      "best-time-to-buy-and-sell-stock"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "capital-one": {
+    "company_name": "CAPITAL-ONE",
+    "total_questions_in_bank": 16,
+    "primary_topics": {},
+    "signature_problems": [
+      "add-two-numbers",
+      "maximum-subarray",
+      "merge-two-sorted-lists",
+      "integer-to-english-words",
+      "coin-change"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "cisco": {
+    "company_name": "CISCO",
+    "total_questions_in_bank": 63,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "citadel": {
+    "company_name": "CITADEL",
+    "total_questions_in_bank": 34,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "3sum",
+      "best-time-to-buy-and-sell-stock"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "doordash": {
+    "company_name": "DOORDASH",
+    "total_questions_in_bank": 15,
+    "primary_topics": {},
+    "signature_problems": [
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum",
+      "best-time-to-buy-and-sell-stock"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "dropbox": {
+    "company_name": "DROPBOX",
+    "total_questions_in_bank": 17,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "median-of-two-sorted-arrays",
+      "letter-combinations-of-a-phone-number",
+      "find-the-index-of-the-first-occurrence-in-a-string",
+      "word-break-ii"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "ebay": {
+    "company_name": "EBAY",
+    "total_questions_in_bank": 104,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "expedia": {
+    "company_name": "EXPEDIA",
+    "total_questions_in_bank": 43,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "3sum",
+      "best-time-to-buy-and-sell-stock"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "facebook": {
+    "company_name": "FACEBOOK",
+    "total_questions_in_bank": 463,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "godaddy": {
+    "company_name": "GODADDY",
+    "total_questions_in_bank": 16,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "median-of-two-sorted-arrays"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "goldman-sachs": {
+    "company_name": "GOLDMAN-SACHS",
+    "total_questions_in_bank": 103,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "google": {
+    "company_name": "GOOGLE",
+    "total_questions_in_bank": 744,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "houzz": {
+    "company_name": "HOUZZ",
+    "total_questions_in_bank": 16,
+    "primary_topics": {},
+    "signature_problems": [
+      "number-of-islands",
+      "median-of-two-sorted-arrays",
+      "regular-expression-matching",
+      "basic-calculator-ii",
+      "rotate-image"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "huawei": {
+    "company_name": "HUAWEI",
+    "total_questions_in_bank": 17,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "add-two-numbers",
+      "trapping-rain-water",
+      "longest-substring-without-repeating-characters",
+      "median-of-two-sorted-arrays"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "hulu": {
+    "company_name": "HULU",
+    "total_questions_in_bank": 16,
+    "primary_topics": {},
+    "signature_problems": [
+      "number-of-islands",
+      "group-anagrams",
+      "word-break",
+      "decode-string",
+      "spiral-matrix"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "indeed": {
+    "company_name": "INDEED",
+    "total_questions_in_bank": 21,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "merge-k-sorted-lists",
+      "merge-two-sorted-lists",
+      "merge-sorted-array",
+      "basic-calculator-ii"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "intuit": {
+    "company_name": "INTUIT",
+    "total_questions_in_bank": 20,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "valid-parentheses",
+      "merge-intervals",
+      "group-anagrams",
+      "word-search"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "ixl": {
+    "company_name": "IXL",
+    "total_questions_in_bank": 15,
+    "primary_topics": {},
+    "signature_problems": [
+      "search-in-rotated-sorted-array",
+      "merge-k-sorted-lists",
+      "basic-calculator-ii",
+      "longest-common-prefix",
+      "palindrome-linked-list"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "jpmorgan": {
+    "company_name": "JPMORGAN",
+    "total_questions_in_bank": 21,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "best-time-to-buy-and-sell-stock",
+      "search-in-rotated-sorted-array"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "linkedin": {
+    "company_name": "LINKEDIN",
+    "total_questions_in_bank": 105,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "best-time-to-buy-and-sell-stock"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "lyft": {
+    "company_name": "LYFT",
+    "total_questions_in_bank": 41,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "best-time-to-buy-and-sell-stock",
+      "add-two-numbers"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "mathworks": {
+    "company_name": "MATHWORKS",
+    "total_questions_in_bank": 37,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "3sum",
+      "add-two-numbers"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "microsoft": {
+    "company_name": "MICROSOFT",
+    "total_questions_in_bank": 437,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "nutanix": {
+    "company_name": "NUTANIX",
+    "total_questions_in_bank": 32,
+    "primary_topics": {},
+    "signature_problems": [
+      "number-of-islands",
+      "search-in-rotated-sorted-array",
+      "group-anagrams",
+      "product-of-array-except-self",
+      "longest-palindromic-substring"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "nvidia": {
+    "company_name": "NVIDIA",
+    "total_questions_in_bank": 22,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "add-two-numbers",
+      "search-in-rotated-sorted-array",
+      "trapping-rain-water"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "oracle": {
+    "company_name": "ORACLE",
+    "total_questions_in_bank": 179,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "palantir-technologies": {
+    "company_name": "PALANTIR-TECHNOLOGIES",
+    "total_questions_in_bank": 16,
+    "primary_topics": {},
+    "signature_problems": [
+      "number-of-islands",
+      "merge-intervals",
+      "trapping-rain-water",
+      "maximum-subarray",
+      "integer-to-english-words"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "paypal": {
+    "company_name": "PAYPAL",
+    "total_questions_in_bank": 58,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "pinterest": {
+    "company_name": "PINTEREST",
+    "total_questions_in_bank": 30,
+    "primary_topics": {},
+    "signature_problems": [
+      "merge-intervals",
+      "word-break",
+      "word-ladder",
+      "sliding-window-maximum",
+      "word-search"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "pocket-gems": {
+    "company_name": "POCKET-GEMS",
+    "total_questions_in_bank": 18,
+    "primary_topics": {},
+    "signature_problems": [
+      "word-break",
+      "kth-largest-element-in-an-array",
+      "first-missing-positive",
+      "regular-expression-matching",
+      "top-k-frequent-elements"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "qualtrics": {
+    "company_name": "QUALTRICS",
+    "total_questions_in_bank": 20,
+    "primary_topics": {},
+    "signature_problems": [
+      "number-of-islands",
+      "3sum",
+      "trapping-rain-water",
+      "group-anagrams",
+      "product-of-array-except-self"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "quora": {
+    "company_name": "QUORA",
+    "total_questions_in_bank": 27,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "3sum",
+      "meeting-rooms-ii",
+      "longest-common-prefix",
+      "subarray-sum-equals-k"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "roblox": {
+    "company_name": "ROBLOX",
+    "total_questions_in_bank": 19,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "longest-palindromic-substring",
+      "letter-combinations-of-a-phone-number",
+      "sliding-window-maximum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "salesforce": {
+    "company_name": "SALESFORCE",
+    "total_questions_in_bank": 56,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "samsung": {
+    "company_name": "SAMSUNG",
+    "total_questions_in_bank": 25,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "valid-parentheses",
+      "3sum",
+      "search-in-rotated-sorted-array",
+      "longest-substring-without-repeating-characters"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "sap": {
+    "company_name": "SAP",
+    "total_questions_in_bank": 34,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "valid-parentheses",
+      "merge-intervals",
+      "best-time-to-buy-and-sell-stock",
+      "merge-k-sorted-lists"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "servicenow": {
+    "company_name": "SERVICENOW",
+    "total_questions_in_bank": 22,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "snapchat": {
+    "company_name": "SNAPCHAT",
+    "total_questions_in_bank": 77,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "merge-intervals",
+      "3sum",
+      "best-time-to-buy-and-sell-stock"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "spotify": {
+    "company_name": "SPOTIFY",
+    "total_questions_in_bank": 17,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "reverse-linked-list",
+      "longest-substring-without-repeating-characters"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "square": {
+    "company_name": "SQUARE",
+    "total_questions_in_bank": 20,
+    "primary_topics": {},
+    "signature_problems": [
+      "number-of-islands",
+      "3sum",
+      "word-break",
+      "word-ladder",
+      "letter-combinations-of-a-phone-number"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "tencent": {
+    "company_name": "TENCENT",
+    "total_questions_in_bank": 27,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum",
+      "best-time-to-buy-and-sell-stock"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "twitter": {
+    "company_name": "TWITTER",
+    "total_questions_in_bank": 58,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "trapping-rain-water"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "uber": {
+    "company_name": "UBER",
+    "total_questions_in_bank": 256,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "visa": {
+    "company_name": "VISA",
+    "total_questions_in_bank": 34,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "vmware": {
+    "company_name": "VMWARE",
+    "total_questions_in_bank": 89,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "wayfair": {
+    "company_name": "WAYFAIR",
+    "total_questions_in_bank": 16,
+    "primary_topics": {},
+    "signature_problems": [
+      "merge-intervals",
+      "maximum-subarray",
+      "longest-palindromic-substring",
+      "first-missing-positive",
+      "string-compression"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "wish": {
+    "company_name": "WISH",
+    "total_questions_in_bank": 27,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "merge-intervals",
+      "add-two-numbers",
+      "trapping-rain-water"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "yahoo": {
+    "company_name": "YAHOO",
+    "total_questions_in_bank": 98,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "number-of-islands",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "yandex": {
+    "company_name": "YANDEX",
+    "total_questions_in_bank": 40,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "valid-parentheses",
+      "merge-intervals",
+      "3sum",
+      "add-two-numbers"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "yelp": {
+    "company_name": "YELP",
+    "total_questions_in_bank": 30,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "merge-intervals",
+      "reverse-linked-list",
+      "longest-substring-without-repeating-characters",
+      "group-anagrams"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "zenefits": {
+    "company_name": "ZENEFITS",
+    "total_questions_in_bank": 18,
+    "primary_topics": {},
+    "signature_problems": [
+      "number-of-islands",
+      "valid-parentheses",
+      "trapping-rain-water",
+      "reverse-linked-list",
+      "median-of-two-sorted-arrays"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  },
+  "zillow": {
+    "company_name": "ZILLOW",
+    "total_questions_in_bank": 31,
+    "primary_topics": {},
+    "signature_problems": [
+      "two-sum",
+      "valid-parentheses",
+      "best-time-to-buy-and-sell-stock",
+      "search-in-rotated-sorted-array",
+      "maximum-subarray"
+    ],
+    "interview_focus": "High frequency on General Algorithms"
+  }
+}

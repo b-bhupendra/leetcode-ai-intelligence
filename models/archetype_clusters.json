@@ -1,0 +1,885 @@
+{
+  "0": {
+    "cluster_id": 0,
+    "title": "Sorting & Array Patterns",
+    "size": 82,
+    "top_tags": [
+      "Sorting",
+      "Array",
+      "Binary Search",
+      "Two Pointers"
+    ],
+    "top_keywords": [
+      "search sorting",
+      "sorting",
+      "binary search",
+      "binary",
+      "search"
+    ],
+    "difficulty_distribution": {
+      "Medium": 39,
+      "Hard": 27,
+      "Easy": 16
+    },
+    "sample_problems": [
+      "3sum",
+      "3sum-closest",
+      "4sum",
+      "sort-colors",
+      "merge-sorted-array"
+    ]
+  },
+  "1": {
+    "cluster_id": 1,
+    "title": "Hash Table & Array Patterns",
+    "size": 66,
+    "top_tags": [
+      "Hash Table",
+      "Array",
+      "Counting",
+      "Math"
+    ],
+    "top_keywords": [
+      "counting",
+      "table counting",
+      "array hash",
+      "hash table",
+      "table"
+    ],
+    "difficulty_distribution": {
+      "Medium": 35,
+      "Easy": 25,
+      "Hard": 6
+    },
+    "sample_problems": [
+      "majority-element",
+      "majority-element-ii",
+      "line-reflection",
+      "number-of-boomerangs",
+      "longest-harmonious-subsequence"
+    ]
+  },
+  "2": {
+    "cluster_id": 2,
+    "title": "Dynamic Programming & Array Patterns",
+    "size": 128,
+    "top_tags": [
+      "Dynamic Programming",
+      "Array",
+      "Math",
+      "Greedy"
+    ],
+    "top_keywords": [
+      "dynamic",
+      "dynamic programming",
+      "programming",
+      "array dynamic",
+      "nums"
+    ],
+    "difficulty_distribution": {
+      "Medium": 128
+    },
+    "sample_problems": [
+      "jump-game-ii",
+      "maximum-subarray",
+      "jump-game",
+      "triangle",
+      "best-time-to-buy-and-sell-stock-ii"
+    ]
+  },
+  "3": {
+    "cluster_id": 3,
+    "title": "Graph & Depth-First Search Patterns",
+    "size": 105,
+    "top_tags": [
+      "Graph",
+      "Depth-First Search",
+      "Breadth-First Search",
+      "Union Find"
+    ],
+    "top_keywords": [
+      "graph",
+      "edges",
+      "search",
+      "node",
+      "edge"
+    ],
+    "difficulty_distribution": {
+      "Medium": 64,
+      "Hard": 39,
+      "Easy": 2
+    },
+    "sample_problems": [
+      "course-schedule",
+      "course-schedule-ii",
+      "graph-valid-tree",
+      "alien-dictionary",
+      "minimum-height-trees"
+    ]
+  },
+  "4": {
+    "cluster_id": 4,
+    "title": "String & Array Patterns",
+    "size": 163,
+    "top_tags": [
+      "String",
+      "Array",
+      "Hash Table",
+      "Two Pointers"
+    ],
+    "top_keywords": [
+      "string",
+      "letters",
+      "characters",
+      "lowercase",
+      "english"
+    ],
+    "difficulty_distribution": {
+      "Easy": 163
+    },
+    "sample_problems": [
+      "longest-common-prefix",
+      "valid-parentheses",
+      "find-the-index-of-the-first-occurrence-in-a-string",
+      "length-of-last-word",
+      "valid-palindrome"
+    ]
+  },
+  "5": {
+    "cluster_id": 5,
+    "title": "Tree & Binary Tree Patterns",
+    "size": 73,
+    "top_tags": [
+      "Tree",
+      "Binary Tree",
+      "Depth-First Search",
+      "Breadth-First Search"
+    ],
+    "top_keywords": [
+      "tree",
+      "binary tree",
+      "root",
+      "null",
+      "input root"
+    ],
+    "difficulty_distribution": {
+      "Easy": 35,
+      "Medium": 35,
+      "Hard": 3
+    },
+    "sample_problems": [
+      "binary-tree-inorder-traversal",
+      "same-tree",
+      "symmetric-tree",
+      "binary-tree-level-order-traversal",
+      "binary-tree-zigzag-level-order-traversal"
+    ]
+  },
+  "6": {
+    "cluster_id": 6,
+    "title": "Array & Hash Table Patterns",
+    "size": 172,
+    "top_tags": [
+      "Array",
+      "Hash Table",
+      "Sorting",
+      "Matrix"
+    ],
+    "top_keywords": [
+      "nums",
+      "array",
+      "input nums",
+      "nums output",
+      "array array"
+    ],
+    "difficulty_distribution": {
+      "Easy": 172
+    },
+    "sample_problems": [
+      "two-sum",
+      "remove-duplicates-from-sorted-array",
+      "remove-element",
+      "convert-sorted-array-to-binary-search-tree",
+      "pascals-triangle"
+    ]
+  },
+  "7": {
+    "cluster_id": 7,
+    "title": "Array & Greedy Patterns",
+    "size": 175,
+    "top_tags": [
+      "Array",
+      "Greedy",
+      "Sorting",
+      "Heap (Priority Queue)"
+    ],
+    "top_keywords": [
+      "greedy array",
+      "greedy",
+      "sorting",
+      "array",
+      "array sorting"
+    ],
+    "difficulty_distribution": {
+      "Medium": 144,
+      "Hard": 18,
+      "Easy": 13
+    },
+    "sample_problems": [
+      "container-with-most-water",
+      "merge-intervals",
+      "gas-station",
+      "maximum-gap",
+      "largest-number"
+    ]
+  },
+  "8": {
+    "cluster_id": 8,
+    "title": "Array & Hash Table Patterns",
+    "size": 136,
+    "top_tags": [
+      "Array",
+      "Hash Table",
+      "Sorting",
+      "String"
+    ],
+    "top_keywords": [
+      "array hash",
+      "hash table",
+      "table",
+      "hash",
+      "nums"
+    ],
+    "difficulty_distribution": {
+      "Medium": 100,
+      "Easy": 21,
+      "Hard": 15
+    },
+    "sample_problems": [
+      "valid-sudoku",
+      "first-missing-positive",
+      "group-anagrams",
+      "set-matrix-zeroes",
+      "construct-binary-tree-from-preorder-and-inorder-traversal"
+    ]
+  },
+  "9": {
+    "cluster_id": 9,
+    "title": "Dynamic Programming & String Patterns",
+    "size": 80,
+    "top_tags": [
+      "Dynamic Programming",
+      "String",
+      "Math",
+      "Memoization"
+    ],
+    "top_keywords": [
+      "string dynamic",
+      "dynamic programming",
+      "dynamic",
+      "programming",
+      "string"
+    ],
+    "difficulty_distribution": {
+      "Hard": 80
+    },
+    "sample_problems": [
+      "regular-expression-matching",
+      "longest-valid-parentheses",
+      "wildcard-matching",
+      "valid-number",
+      "scramble-string"
+    ]
+  },
+  "10": {
+    "cluster_id": 10,
+    "title": "Bit Manipulation & Array Patterns",
+    "size": 58,
+    "top_tags": [
+      "Bit Manipulation",
+      "Array",
+      "Dynamic Programming",
+      "Bitmask"
+    ],
+    "top_keywords": [
+      "manipulation",
+      "bit manipulation",
+      "bit",
+      "bitmask",
+      "manipulation array"
+    ],
+    "difficulty_distribution": {
+      "Hard": 54,
+      "Medium": 3,
+      "Easy": 1
+    },
+    "sample_problems": [
+      "counting-bits",
+      "optimal-account-balancing",
+      "stickers-to-spell-word",
+      "transform-to-chessboard",
+      "split-array-with-same-average"
+    ]
+  },
+  "11": {
+    "cluster_id": 11,
+    "title": "Binary Search & Array Patterns",
+    "size": 99,
+    "top_tags": [
+      "Binary Search",
+      "Array",
+      "Segment Tree",
+      "Ordered Set"
+    ],
+    "top_keywords": [
+      "binary search",
+      "array binary",
+      "binary",
+      "search",
+      "nums"
+    ],
+    "difficulty_distribution": {
+      "Medium": 55,
+      "Hard": 33,
+      "Easy": 11
+    },
+    "sample_problems": [
+      "median-of-two-sorted-arrays",
+      "search-in-rotated-sorted-array",
+      "find-first-and-last-position-of-element-in-sorted-array",
+      "search-insert-position",
+      "search-a-2d-matrix"
+    ]
+  },
+  "12": {
+    "cluster_id": 12,
+    "title": "Math & String Patterns",
+    "size": 108,
+    "top_tags": [
+      "Math",
+      "String",
+      "Simulation",
+      "Bit Manipulation"
+    ],
+    "top_keywords": [
+      "math",
+      "number",
+      "input output",
+      "math math",
+      "num"
+    ],
+    "difficulty_distribution": {
+      "Easy": 94,
+      "Hard": 14
+    },
+    "sample_problems": [
+      "palindrome-number",
+      "roman-to-integer",
+      "permutation-sequence",
+      "add-binary",
+      "sqrtx"
+    ]
+  },
+  "13": {
+    "cluster_id": 13,
+    "title": "Array & Prefix Sum Patterns",
+    "size": 132,
+    "top_tags": [
+      "Array",
+      "Prefix Sum",
+      "Sliding Window",
+      "Hash Table"
+    ],
+    "top_keywords": [
+      "nums",
+      "sum",
+      "prefix sum",
+      "prefix",
+      "array"
+    ],
+    "difficulty_distribution": {
+      "Medium": 115,
+      "Hard": 16,
+      "Easy": 1
+    },
+    "sample_problems": [
+      "next-permutation",
+      "insert-interval",
+      "remove-duplicates-from-sorted-array-ii",
+      "minimum-size-subarray-sum",
+      "product-of-array-except-self"
+    ]
+  },
+  "14": {
+    "cluster_id": 14,
+    "title": "Bit Manipulation & Linked List Patterns",
+    "size": 75,
+    "top_tags": [
+      "Bit Manipulation",
+      "Linked List",
+      "Two Pointers",
+      "Array"
+    ],
+    "top_keywords": [
+      "linked",
+      "linked list",
+      "head",
+      "list",
+      "input head"
+    ],
+    "difficulty_distribution": {
+      "Medium": 53,
+      "Easy": 20,
+      "Hard": 2
+    },
+    "sample_problems": [
+      "add-two-numbers",
+      "remove-nth-node-from-end-of-list",
+      "merge-two-sorted-lists",
+      "merge-k-sorted-lists",
+      "swap-nodes-in-pairs"
+    ]
+  },
+  "15": {
+    "cluster_id": 15,
+    "title": "String & Greedy Patterns",
+    "size": 75,
+    "top_tags": [
+      "String",
+      "Greedy",
+      "Two Pointers",
+      "Stack"
+    ],
+    "top_keywords": [
+      "string",
+      "pointers string",
+      "pointers",
+      "greedy",
+      "greedy string"
+    ],
+    "difficulty_distribution": {
+      "Medium": 56,
+      "Hard": 16,
+      "Easy": 3
+    },
+    "sample_problems": [
+      "reverse-words-in-a-string",
+      "one-edit-distance",
+      "compare-version-numbers",
+      "reverse-words-in-a-string-ii",
+      "remove-duplicate-letters"
+    ]
+  },
+  "16": {
+    "cluster_id": 16,
+    "title": "String & Math Patterns",
+    "size": 105,
+    "top_tags": [
+      "String",
+      "Math",
+      "Stack",
+      "Simulation"
+    ],
+    "top_keywords": [
+      "string",
+      "math string",
+      "math",
+      "substring",
+      "digits"
+    ],
+    "difficulty_distribution": {
+      "Medium": 91,
+      "Hard": 14
+    },
+    "sample_problems": [
+      "zigzag-conversion",
+      "string-to-integer-atoi",
+      "integer-to-roman",
+      "count-and-say",
+      "multiply-strings"
+    ]
+  },
+  "17": {
+    "cluster_id": 17,
+    "title": "Depth-First Search & Array Patterns",
+    "size": 40,
+    "top_tags": [
+      "Depth-First Search",
+      "Array",
+      "Tree",
+      "Dynamic Programming"
+    ],
+    "top_keywords": [
+      "tree",
+      "depth search",
+      "depth",
+      "edges",
+      "search"
+    ],
+    "difficulty_distribution": {
+      "Hard": 27,
+      "Medium": 13
+    },
+    "sample_problems": [
+      "lexicographical-numbers",
+      "concatenated-words",
+      "array-nesting",
+      "kill-process",
+      "sum-of-distances-in-tree"
+    ]
+  },
+  "18": {
+    "cluster_id": 18,
+    "title": "Array & Matrix Patterns",
+    "size": 136,
+    "top_tags": [
+      "Array",
+      "Matrix",
+      "Breadth-First Search",
+      "Dynamic Programming"
+    ],
+    "top_keywords": [
+      "matrix",
+      "grid",
+      "cell",
+      "input grid",
+      "grid output"
+    ],
+    "difficulty_distribution": {
+      "Medium": 81,
+      "Hard": 53,
+      "Easy": 2
+    },
+    "sample_problems": [
+      "sudoku-solver",
+      "unique-paths-ii",
+      "minimum-path-sum",
+      "word-search",
+      "surrounded-regions"
+    ]
+  },
+  "19": {
+    "cluster_id": 19,
+    "title": "Array & Dynamic Programming Patterns",
+    "size": 107,
+    "top_tags": [
+      "Array",
+      "Dynamic Programming",
+      "Greedy",
+      "Segment Tree"
+    ],
+    "top_keywords": [
+      "nums",
+      "array",
+      "array dynamic",
+      "dynamic programming",
+      "dynamic"
+    ],
+    "difficulty_distribution": {
+      "Hard": 107
+    },
+    "sample_problems": [
+      "best-time-to-buy-and-sell-stock-iii",
+      "candy",
+      "word-break-ii",
+      "best-time-to-buy-and-sell-stock-iv",
+      "the-skyline-problem"
+    ]
+  },
+  "20": {
+    "cluster_id": 20,
+    "title": "Hash Table & String Patterns",
+    "size": 147,
+    "top_tags": [
+      "Hash Table",
+      "String",
+      "Counting",
+      "Array"
+    ],
+    "top_keywords": [
+      "table string",
+      "string",
+      "hash table",
+      "table",
+      "hash"
+    ],
+    "difficulty_distribution": {
+      "Medium": 104,
+      "Hard": 22,
+      "Easy": 21
+    },
+    "sample_problems": [
+      "longest-substring-without-repeating-characters",
+      "letter-combinations-of-a-phone-number",
+      "substring-with-concatenation-of-all-words",
+      "minimum-window-substring",
+      "word-ladder"
+    ]
+  },
+  "21": {
+    "cluster_id": 21,
+    "title": "Array & Math Patterns",
+    "size": 82,
+    "top_tags": [
+      "Array",
+      "Math",
+      "Geometry",
+      "Sorting"
+    ],
+    "top_keywords": [
+      "array math",
+      "math",
+      "geometry array",
+      "geometry",
+      "points"
+    ],
+    "difficulty_distribution": {
+      "Hard": 40,
+      "Easy": 33,
+      "Medium": 9
+    },
+    "sample_problems": [
+      "plus-one",
+      "max-points-on-a-line",
+      "best-meeting-point",
+      "self-crossing",
+      "convex-polygon"
+    ]
+  },
+  "22": {
+    "cluster_id": 22,
+    "title": "Math & Array Patterns",
+    "size": 119,
+    "top_tags": [
+      "Math",
+      "Array",
+      "Number Theory",
+      "Greedy"
+    ],
+    "top_keywords": [
+      "math",
+      "array math",
+      "nums",
+      "number",
+      "number theory"
+    ],
+    "difficulty_distribution": {
+      "Medium": 117,
+      "Hard": 2
+    },
+    "sample_problems": [
+      "reverse-integer",
+      "divide-two-integers",
+      "rotate-image",
+      "powx-n",
+      "evaluate-reverse-polish-notation"
+    ]
+  },
+  "23": {
+    "cluster_id": 23,
+    "title": "Math & Dynamic Programming Patterns",
+    "size": 72,
+    "top_tags": [
+      "Math",
+      "Dynamic Programming",
+      "Combinatorics",
+      "Array"
+    ],
+    "top_keywords": [
+      "math dynamic",
+      "math",
+      "dynamic",
+      "dynamic programming",
+      "programming"
+    ],
+    "difficulty_distribution": {
+      "Hard": 37,
+      "Medium": 30,
+      "Easy": 5
+    },
+    "sample_problems": [
+      "unique-paths",
+      "climbing-stairs",
+      "unique-binary-search-trees",
+      "number-of-digit-one",
+      "ugly-number-ii"
+    ]
+  },
+  "24": {
+    "cluster_id": 24,
+    "title": "Tree & Binary Tree Patterns",
+    "size": 66,
+    "top_tags": [
+      "Tree",
+      "Binary Tree",
+      "Depth-First Search",
+      "Binary Search Tree"
+    ],
+    "top_keywords": [
+      "tree",
+      "binary tree",
+      "root",
+      "node",
+      "null"
+    ],
+    "difficulty_distribution": {
+      "Medium": 60,
+      "Hard": 6
+    },
+    "sample_problems": [
+      "validate-binary-search-tree",
+      "recover-binary-search-tree",
+      "convert-sorted-list-to-binary-search-tree",
+      "path-sum-ii",
+      "flatten-binary-tree-to-linked-list"
+    ]
+  },
+  "25": {
+    "cluster_id": 25,
+    "title": "Array & Simulation Patterns",
+    "size": 99,
+    "top_tags": [
+      "Array",
+      "Simulation",
+      "Matrix",
+      "Two Pointers"
+    ],
+    "top_keywords": [
+      "simulation",
+      "array simulation",
+      "simulation array",
+      "array",
+      "matrix simulation"
+    ],
+    "difficulty_distribution": {
+      "Medium": 49,
+      "Easy": 43,
+      "Hard": 7
+    },
+    "sample_problems": [
+      "spiral-matrix",
+      "spiral-matrix-ii",
+      "text-justification",
+      "game-of-life",
+      "teemo-attacking"
+    ]
+  },
+  "26": {
+    "cluster_id": 26,
+    "title": "String & Hash Function Patterns",
+    "size": 25,
+    "top_tags": [
+      "String",
+      "Hash Function",
+      "Rolling Hash",
+      "String Matching"
+    ],
+    "top_keywords": [
+      "rolling hash",
+      "function rolling",
+      "rolling",
+      "hash function",
+      "string"
+    ],
+    "difficulty_distribution": {
+      "Hard": 16,
+      "Medium": 8,
+      "Easy": 1
+    },
+    "sample_problems": [
+      "shortest-palindrome",
+      "longest-duplicate-substring",
+      "longest-repeating-substring",
+      "longest-chunked-palindrome-decomposition",
+      "distinct-echo-substrings"
+    ]
+  },
+  "27": {
+    "cluster_id": 27,
+    "title": "Stack & Array Patterns",
+    "size": 59,
+    "top_tags": [
+      "Stack",
+      "Array",
+      "Monotonic Stack",
+      "Dynamic Programming"
+    ],
+    "top_keywords": [
+      "stack",
+      "monotonic stack",
+      "monotonic",
+      "stack array",
+      "stack stack"
+    ],
+    "difficulty_distribution": {
+      "Medium": 35,
+      "Hard": 22,
+      "Easy": 2
+    },
+    "sample_problems": [
+      "trapping-rain-water",
+      "largest-rectangle-in-histogram",
+      "maximal-rectangle",
+      "verify-preorder-sequence-in-binary-search-tree",
+      "create-maximum-number"
+    ]
+  },
+  "28": {
+    "cluster_id": 28,
+    "title": "Backtracking & Array Patterns",
+    "size": 47,
+    "top_tags": [
+      "Backtracking",
+      "Array",
+      "Bit Manipulation",
+      "Dynamic Programming"
+    ],
+    "top_keywords": [
+      "backtracking",
+      "array backtracking",
+      "bit",
+      "bit manipulation",
+      "manipulation"
+    ],
+    "difficulty_distribution": {
+      "Medium": 36,
+      "Hard": 9,
+      "Easy": 2
+    },
+    "sample_problems": [
+      "combination-sum",
+      "combination-sum-ii",
+      "permutations",
+      "permutations-ii",
+      "n-queens"
+    ]
+  },
+  "29": {
+    "cluster_id": 29,
+    "title": "String & Dynamic Programming Patterns",
+    "size": 38,
+    "top_tags": [
+      "String",
+      "Dynamic Programming",
+      "Greedy",
+      "Hash Table"
+    ],
+    "top_keywords": [
+      "string dynamic",
+      "string",
+      "dynamic",
+      "dynamic programming",
+      "programming"
+    ],
+    "difficulty_distribution": {
+      "Medium": 38
+    },
+    "sample_problems": [
+      "longest-palindromic-substring",
+      "generate-parentheses",
+      "edit-distance",
+      "decode-ways",
+      "interleaving-string"
+    ]
+  }
+}
