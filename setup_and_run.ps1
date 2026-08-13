@@ -9,14 +9,22 @@ Write-Host "=======================================================" -Foreground
 
 # 1. Virtual Environment
 if (-not (Test-Path ".venv\Scripts\python.exe")) {
-    Write-Host "[1/3] Creating virtual environment (.venv)..." -ForegroundColor Yellow
+    Write-Host "[1/4] Creating virtual environment (.venv)..." -ForegroundColor Yellow
     python -m venv .venv
 }
 
 # 2. Dependencies
-Write-Host "[2/3] Checking dependencies from requirements.txt..." -ForegroundColor Yellow
+Write-Host "[2/4] Checking dependencies from requirements.txt..." -ForegroundColor Yellow
 & .venv\Scripts\pip install -r requirements.txt
 
-# 3. Launch Web Application
-Write-Host "[3/3] Starting Web Application at http://localhost:8000 ..." -ForegroundColor Green
+# 3. Model Verification & Auto-training
+if (-not (Test-Path "models\company_classifier.joblib")) {
+    Write-Host "[3/4] Auto-training ML models on dataset (~15 seconds)..." -ForegroundColor Yellow
+    & .venv\Scripts\python -c "import ml_models; ml_models.main()"
+} else {
+    Write-Host "[3/4] Pre-trained models verified." -ForegroundColor Green
+}
+
+# 4. Launch Web Application
+Write-Host "[4/4] Starting Web Application at http://localhost:8000 ..." -ForegroundColor Green
 & .venv\Scripts\python web_app.py
