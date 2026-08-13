@@ -999,7 +999,11 @@ class LeetCodeIntelligenceEngine:
         self.pattern_classifier.fit(descriptions, labels)
 
         self.df = df_full.copy()
-        self.df["cluster_id"] = [self.cluster_engine.kmeans.predict(self.X_features[i])[0] for i in range(len(df_full))]
+        self.df["cluster_id"] = self.df.apply(classify_problem_to_archetype, axis=1)
+        self.df["difficulty_tier"] = self.df.apply(
+            lambda row: compute_difficulty_tier(row.get("difficulty"), row.get("topic_tags"), row.get("problem_description", "")),
+            axis=1
+        )
         self.df["cluster_title"] = self.df["cluster_id"].map(self.cluster_engine.cluster_labels)
 
         # Save models
@@ -1026,7 +1030,6 @@ class LeetCodeIntelligenceEngine:
             self.topic_classifier = joblib.load(os.path.join(self.models_dir, "topic_classifier.joblib"))
             
         self.company_classifier = joblib.load(os.path.join(self.models_dir, "company_classifier.joblib"))
-        self.cluster_engine = joblib.load(os.path.join(self.models_dir, "cluster_engine.joblib"))
         self.X_features = joblib.load(os.path.join(self.models_dir, "X_features.joblib"))
         
         clustered_path = os.path.join(OUTPUT_DIR, "leetcode_with_companies_and_clusters.parquet")
@@ -1035,8 +1038,16 @@ class LeetCodeIntelligenceEngine:
         else:
             full_path = os.path.join(OUTPUT_DIR, "leetcode_with_companies_full.parquet")
             self.df = pd.read_parquet(full_path)
-            self.df["cluster_id"] = [self.cluster_engine.kmeans.predict(self.X_features[i])[0] for i in range(len(self.df))]
-            self.df["cluster_title"] = self.df["cluster_id"].map(self.cluster_engine.cluster_labels)
+
+        # Ensure 15 Archetypes and 5-Tier Stratification are assigned
+        self.df["cluster_id"] = self.df.apply(classify_problem_to_archetype, axis=1)
+        self.df["difficulty_tier"] = self.df.apply(
+            lambda row: compute_difficulty_tier(row.get("difficulty"), row.get("topic_tags"), row.get("problem_description", "")),
+            axis=1
+        )
+        self.cluster_engine = ProblemClusterEngine(n_clusters=15)
+        self.cluster_engine.fit(self.X_features, self.df, self.feature_extractor)
+        self.df["cluster_title"] = self.df["cluster_id"].map(self.cluster_engine.cluster_labels)
 
         # Fit lightweight multi-label pattern classifier
         self.pattern_classifier = MultiLabelPatternClassifier(n_archetypes=15)

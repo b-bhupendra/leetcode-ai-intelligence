@@ -1,12 +1,16 @@
 {
   "classes": [
     "Easy",
+    "Easy-Medium",
     "Medium",
+    "Medium-Hard",
     "Hard"
   ],
   "heuristics": {
-    "Easy": "Direct 1-pass arrays, hash tables, basic string manipulation, standard math",
-    "Medium": "Two pointers, sliding window, binary search trees, BFS/DFS graph traversals, 1D dynamic programming",
-    "Hard": "2D/3D dynamic programming, complex segment trees, network flow, advanced backtracking, trie + bitmask"
+    "Easy": "Tier 1: Direct single-pass arrays, basic hash table lookups, elementary math / string formatting",
+    "Easy-Medium": "Tier 2: Easy with algorithmic twists (two pointers / basic DP) or short standard Mediums",
+    "Medium": "Tier 3: Core Medium questions (Tree/Graph BFS/DFS, Binary Search, Sliding Window, Greedy)",
+    "Medium-Hard": "Tier 4: Advanced Mediums (1D DP, Segment Trees, Bitmasks) or approachable Hard questions",
+    "Hard": "Tier 5: Deep multi-dimensional DP, Complex Segment Trees, Network Flows, Game Theory"
   }
 }

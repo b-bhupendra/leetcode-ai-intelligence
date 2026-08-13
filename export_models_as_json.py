@@ -24,11 +24,11 @@ def export_plain_text_models():
     engine = LeetCodeIntelligenceEngine()
     engine.load_models()
 
-    # 1. Export 30 Algorithmic Archetype Clusters
+    # 1. Export 15 Unified Algorithmic Archetype Clusters with 5 Difficulty Tiers & GFG Roadmap
     clusters_json_path = os.path.join(MODELS_DIR, "archetype_clusters.json")
     with open(clusters_json_path, "w", encoding="utf-8") as f:
         json.dump(engine.cluster_engine.cluster_summaries, f, indent=2, ensure_ascii=False)
-    print(f" [OK] Exported 30 Clusters -> {clusters_json_path} ({os.path.getsize(clusters_json_path):,} bytes)")
+    print(f" [OK] Exported 15 Archetypes -> {clusters_json_path} ({os.path.getsize(clusters_json_path):,} bytes)")
 
     # 2. Export Company Interview Profiles & Centroids
     company_profiles = {}
@@ -68,19 +68,21 @@ def export_plain_text_models():
         json.dump(topic_rules, f, indent=2, ensure_ascii=False)
     print(f" [OK] Exported Topic Vocabulary -> {topic_json_path}")
 
-    # 4. Export Difficulty Heuristics & Rules
+    # 4. Export 5-Tier Difficulty Heuristics & Rules
     diff_rules = {
-        "classes": ["Easy", "Medium", "Hard"],
+        "classes": ["Easy", "Easy-Medium", "Medium", "Medium-Hard", "Hard"],
         "heuristics": {
-            "Easy": "Direct 1-pass arrays, hash tables, basic string manipulation, standard math",
-            "Medium": "Two pointers, sliding window, binary search trees, BFS/DFS graph traversals, 1D dynamic programming",
-            "Hard": "2D/3D dynamic programming, complex segment trees, network flow, advanced backtracking, trie + bitmask"
+            "Easy": "Tier 1: Direct single-pass arrays, basic hash table lookups, elementary math / string formatting",
+            "Easy-Medium": "Tier 2: Easy with algorithmic twists (two pointers / basic DP) or short standard Mediums",
+            "Medium": "Tier 3: Core Medium questions (Tree/Graph BFS/DFS, Binary Search, Sliding Window, Greedy)",
+            "Medium-Hard": "Tier 4: Advanced Mediums (1D DP, Segment Trees, Bitmasks) or approachable Hard questions",
+            "Hard": "Tier 5: Deep multi-dimensional DP, Complex Segment Trees, Network Flows, Game Theory"
         }
     }
     diff_json_path = os.path.join(MODELS_DIR, "difficulty_rules.json")
     with open(diff_json_path, "w", encoding="utf-8") as f:
         json.dump(diff_rules, f, indent=2, ensure_ascii=False)
-    print(f" [OK] Exported Difficulty Rules -> {diff_json_path}")
+    print(f" [OK] Exported 5-Tier Difficulty Rules -> {diff_json_path}")
 
     print("\n ALL ML MODELS SUCCESSFULLY CONVERTED TO PLAIN-TEXT JSON!")
 

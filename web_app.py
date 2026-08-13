@@ -140,6 +140,17 @@ def get_metadata():
     }
 
 
+@app.get("/api/archetypes")
+def get_all_archetypes():
+    """Returns the 15 Unified Algorithmic Archetypes with 5-tier distributions and GFG Roadmap."""
+    return JSONResponse(content={
+        "status": "success",
+        "paradigms": engine.cluster_engine.core_paradigms,
+        "phases": engine.cluster_engine.roadmap_phases,
+        "archetypes": list(engine.cluster_engine.cluster_summaries.values())
+    })
+
+
 @app.get("/api/cluster/{cluster_id}")
 def get_cluster_details(cluster_id: int):
     """Returns granular 5-tier problem breakdown and archetype analysis for a cluster."""
@@ -147,6 +158,34 @@ def get_cluster_details(cluster_id: int):
     if not summary:
         return JSONResponse(content={"status": "not_found", "message": f"Cluster #{cluster_id} not found."}, status_code=404)
     return JSONResponse(content={"status": "success", "data": summary})
+
+
+@app.get("/api/cluster/{cluster_id}/tier/{tier_name}")
+def get_cluster_tier_problems(cluster_id: int, tier_name: str):
+    """Returns problems for a specific difficulty tier within an archetype."""
+    summary = engine.cluster_engine.cluster_summaries.get(cluster_id)
+    if not summary:
+        return JSONResponse(content={"status": "not_found", "message": f"Cluster #{cluster_id} not found."}, status_code=404)
+    
+    # Normalize tier name (e.g. easy-medium, medium-hard)
+    tier_key = None
+    for k in ["Easy", "Easy-Medium", "Medium", "Medium-Hard", "Hard"]:
+        if k.lower() == tier_name.lower().replace("_", "-"):
+            tier_key = k
+            break
+    
+    if not tier_key:
+        return JSONResponse(content={"status": "invalid_tier", "message": f"Tier '{tier_name}' is invalid. Use Easy, Easy-Medium, Medium, Medium-Hard, or Hard."}, status_code=400)
+    
+    problems = summary.get("problems_by_tier", {}).get(tier_key, [])
+    return JSONResponse(content={
+        "status": "success",
+        "cluster_id": cluster_id,
+        "archetype": summary.get("title"),
+        "tier": tier_key,
+        "problem_count": len(problems),
+        "problems": problems
+    })
 
 
 @app.post("/api/predict")

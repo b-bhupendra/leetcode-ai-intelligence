@@ -977,6 +977,17 @@ def get_metadata():
     }
 
 
+@app.get("/api/archetypes")
+def get_all_archetypes():
+    """Returns the 15 Unified Algorithmic Archetypes with 5-tier distributions and GFG Roadmap."""
+    return JSONResponse(content={
+        "status": "success",
+        "paradigms": engine.cluster_engine.core_paradigms,
+        "phases": engine.cluster_engine.roadmap_phases,
+        "archetypes": list(engine.cluster_engine.cluster_summaries.values())
+    })
+
+
 @app.get("/api/cluster/{cluster_id}")
 def get_cluster_details(cluster_id: int):
     """Returns granular 5-tier problem breakdown and archetype analysis for a cluster."""
@@ -984,6 +995,34 @@ def get_cluster_details(cluster_id: int):
     if not summary:
         return JSONResponse(content={"status": "not_found", "message": f"Cluster #{cluster_id} not found."}, status_code=404)
     return JSONResponse(content={"status": "success", "data": summary})
+
+
+@app.get("/api/cluster/{cluster_id}/tier/{tier_name}")
+def get_cluster_tier_problems(cluster_id: int, tier_name: str):
+    """Returns problems for a specific difficulty tier within an archetype."""
+    summary = engine.cluster_engine.cluster_summaries.get(cluster_id)
+    if not summary:
+        return JSONResponse(content={"status": "not_found", "message": f"Cluster #{cluster_id} not found."}, status_code=404)
+    
+    # Normalize tier name (e.g. easy-medium, medium-hard)
+    tier_key = None
+    for k in ["Easy", "Easy-Medium", "Medium", "Medium-Hard", "Hard"]:
+        if k.lower() == tier_name.lower().replace("_", "-"):
+            tier_key = k
+            break
+    
+    if not tier_key:
+        return JSONResponse(content={"status": "invalid_tier", "message": f"Tier '{tier_name}' is invalid. Use Easy, Easy-Medium, Medium, Medium-Hard, or Hard."}, status_code=400)
+    
+    problems = summary.get("problems_by_tier", {}).get(tier_key, [])
+    return JSONResponse(content={
+        "status": "success",
+        "cluster_id": cluster_id,
+        "archetype": summary.get("title"),
+        "tier": tier_key,
+        "problem_count": len(problems),
+        "problems": problems
+    })
 
 
 @app.post("/api/predict")
@@ -2310,7 +2349,11 @@ class LeetCodeIntelligenceEngine:
         self.pattern_classifier.fit(descriptions, labels)
 
         self.df = df_full.copy()
-        self.df["cluster_id"] = [self.cluster_engine.kmeans.predict(self.X_features[i])[0] for i in range(len(df_full))]
+        self.df["cluster_id"] = self.df.apply(classify_problem_to_archetype, axis=1)
+        self.df["difficulty_tier"] = self.df.apply(
+            lambda row: compute_difficulty_tier(row.get("difficulty"), row.get("topic_tags"), row.get("problem_description", "")),
+            axis=1
+        )
         self.df["cluster_title"] = self.df["cluster_id"].map(self.cluster_engine.cluster_labels)
 
         # Save models
@@ -2337,7 +2380,6 @@ class LeetCodeIntelligenceEngine:
             self.topic_classifier = joblib.load(os.path.join(self.models_dir, "topic_classifier.joblib"))
             
         self.company_classifier = joblib.load(os.path.join(self.models_dir, "company_classifier.joblib"))
-        self.cluster_engine = joblib.load(os.path.join(self.models_dir, "cluster_engine.joblib"))
         self.X_features = joblib.load(os.path.join(self.models_dir, "X_features.joblib"))
         
         clustered_path = os.path.join(OUTPUT_DIR, "leetcode_with_companies_and_clusters.parquet")
@@ -2346,8 +2388,16 @@ class LeetCodeIntelligenceEngine:
         else:
             full_path = os.path.join(OUTPUT_DIR, "leetcode_with_companies_full.parquet")
             self.df = pd.read_parquet(full_path)
-            self.df["cluster_id"] = [self.cluster_engine.kmeans.predict(self.X_features[i])[0] for i in range(len(self.df))]
-            self.df["cluster_title"] = self.df["cluster_id"].map(self.cluster_engine.cluster_labels)
+
+        # Ensure 15 Archetypes and 5-Tier Stratification are assigned
+        self.df["cluster_id"] = self.df.apply(classify_problem_to_archetype, axis=1)
+        self.df["difficulty_tier"] = self.df.apply(
+            lambda row: compute_difficulty_tier(row.get("difficulty"), row.get("topic_tags"), row.get("problem_description", "")),
+            axis=1
+        )
+        self.cluster_engine = ProblemClusterEngine(n_clusters=15)
+        self.cluster_engine.fit(self.X_features, self.df, self.feature_extractor)
+        self.df["cluster_title"] = self.df["cluster_id"].map(self.cluster_engine.cluster_labels)
 
         # Fit lightweight multi-label pattern classifier
         self.pattern_classifier = MultiLabelPatternClassifier(n_archetypes=15)
