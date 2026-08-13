@@ -145,6 +145,7 @@ def predict_company(req: PredictRequest):
 
 
 @app.post("/api/filter-recommend")
+@app.post("/api/problems/filter")
 def filter_and_recommend(req: FilterRequest):
     """Filters problems and finds high-probability similar unasked questions."""
     try:
@@ -172,6 +173,7 @@ def get_problem_details(identifier: str):
 
 
 @app.post("/api/scrape-and-ingest")
+@app.post("/api/scrape")
 def scrape_and_ingest(req: ScrapeRequest):
     """Scrapes a single problem by slug/URL, auto-classifies it, and appends to live DB."""
     try:
