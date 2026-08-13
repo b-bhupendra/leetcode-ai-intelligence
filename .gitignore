@@ -29,6 +29,13 @@ chroma_db/
 *.db
 *.sqlite3
 
+# Node / Frontend Build
+frontend/node_modules/
+node_modules/
+frontend/dist/
+dist/
+*.env.local
+
 # IDE & OS files
 .DS_Store
 Thumbs.db

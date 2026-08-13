@@ -385,19 +385,36 @@ def analyze_solution_endpoint(req: SolutionAnalysisRequest):
     return JSONResponse(content={"status": "success", "data": result})
 
 
+from fastapi.staticfiles import StaticFiles
+
+# Mount React static assets if built
+DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend", "dist")
+if os.path.exists(DIST_DIR):
+    assets_dir = os.path.join(DIST_DIR, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+
 @app.get("/", response_class=HTMLResponse)
 def index():
+    # Prefer compiled modern React UI
+    react_index = os.path.join(DIST_DIR, "index.html")
+    if os.path.exists(react_index):
+        with open(react_index, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+
+    # Fallback to templates/index.html
     template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "index.html")
     if os.path.exists(template_path):
         with open(template_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    return HTMLResponse("<h1>Templates index.html not found</h1>")
+    return HTMLResponse("<h1>Frontend UI not found</h1>")
 
 
 # Background Queue Worker Thread Loop (Runs every 5 seconds)
 def _start_queue_worker_background():
     import agent_queue_worker
-    worker_thread = threading.Thread(target=agent_queue_worker.run_worker_loop, kwargs={"poll_seconds": 5}, daemon=True)
+    worker_thread = threading.Thread(target=agent_queue_worker.run_agent_loop, kwargs={"interval_seconds": 5}, daemon=True)
     worker_thread.start()
 
 _start_queue_worker_background()
