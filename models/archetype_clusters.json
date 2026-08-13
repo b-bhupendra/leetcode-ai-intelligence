@@ -1,8 +1,10 @@
 {
   "0": {
     "cluster_id": 0,
-    "title": "Sorting & Array Patterns",
+    "title": "Medium Sorting & Array (Search Sorting)",
     "size": 82,
+    "problem_count": 82,
+    "description": "Medium-level interview pattern focusing on Sorting, Array, and search sorting, sorting, binary search structures.",
     "top_tags": [
       "Sorting",
       "Array",
@@ -31,8 +33,10 @@
   },
   "1": {
     "cluster_id": 1,
-    "title": "Hash Table & Array Patterns",
+    "title": "Medium Hash Table & Array (Counting)",
     "size": 66,
+    "problem_count": 66,
+    "description": "Medium-level interview pattern focusing on Hash Table, Array, and counting, table counting, array hash structures.",
     "top_tags": [
       "Hash Table",
       "Array",
@@ -61,8 +65,10 @@
   },
   "2": {
     "cluster_id": 2,
-    "title": "Dynamic Programming & Array Patterns",
+    "title": "Medium Dynamic Programming & Array (Dynamic)",
     "size": 128,
+    "problem_count": 128,
+    "description": "Medium-level interview pattern focusing on Dynamic Programming, Array, and dynamic, dynamic programming, programming structures.",
     "top_tags": [
       "Dynamic Programming",
       "Array",
@@ -89,8 +95,10 @@
   },
   "3": {
     "cluster_id": 3,
-    "title": "Graph & Depth-First Search Patterns",
+    "title": "Medium Graph & Depth-First Search (Graph)",
     "size": 105,
+    "problem_count": 105,
+    "description": "Medium-level interview pattern focusing on Graph, Depth-First Search, and graph, edges, search structures.",
     "top_tags": [
       "Graph",
       "Depth-First Search",
@@ -119,8 +127,10 @@
   },
   "4": {
     "cluster_id": 4,
-    "title": "String & Array Patterns",
+    "title": "Easy String & Array (String)",
     "size": 163,
+    "problem_count": 163,
+    "description": "Easy-level interview pattern focusing on String, Array, and string, letters, characters structures.",
     "top_tags": [
       "String",
       "Array",
@@ -147,8 +157,10 @@
   },
   "5": {
     "cluster_id": 5,
-    "title": "Tree & Binary Tree Patterns",
+    "title": "Easy Tree & Binary Tree (Tree)",
     "size": 73,
+    "problem_count": 73,
+    "description": "Easy-level interview pattern focusing on Tree, Binary Tree, and tree, binary tree, root structures.",
     "top_tags": [
       "Tree",
       "Binary Tree",
@@ -177,8 +189,10 @@
   },
   "6": {
     "cluster_id": 6,
-    "title": "Array & Hash Table Patterns",
+    "title": "Easy Array & Hash Table (Nums)",
     "size": 172,
+    "problem_count": 172,
+    "description": "Easy-level interview pattern focusing on Array, Hash Table, and nums, array, input nums structures.",
     "top_tags": [
       "Array",
       "Hash Table",
@@ -205,8 +219,10 @@
   },
   "7": {
     "cluster_id": 7,
-    "title": "Array & Greedy Patterns",
+    "title": "Medium Array & Greedy (Greedy Array)",
     "size": 175,
+    "problem_count": 175,
+    "description": "Medium-level interview pattern focusing on Array, Greedy, and greedy array, greedy, sorting structures.",
     "top_tags": [
       "Array",
       "Greedy",
@@ -235,8 +251,10 @@
   },
   "8": {
     "cluster_id": 8,
-    "title": "Array & Hash Table Patterns",
+    "title": "Medium Array & Hash Table (Array Hash)",
     "size": 136,
+    "problem_count": 136,
+    "description": "Medium-level interview pattern focusing on Array, Hash Table, and array hash, hash table, table structures.",
     "top_tags": [
       "Array",
       "Hash Table",
@@ -265,8 +283,10 @@
   },
   "9": {
     "cluster_id": 9,
-    "title": "Dynamic Programming & String Patterns",
+    "title": "Hard Dynamic Programming & String (String Dynamic)",
     "size": 80,
+    "problem_count": 80,
+    "description": "Hard-level interview pattern focusing on Dynamic Programming, String, and string dynamic, dynamic programming, dynamic structures.",
     "top_tags": [
       "Dynamic Programming",
       "String",
@@ -293,8 +313,10 @@
   },
   "10": {
     "cluster_id": 10,
-    "title": "Bit Manipulation & Array Patterns",
+    "title": "Hard Bit Manipulation & Array (Manipulation)",
     "size": 58,
+    "problem_count": 58,
+    "description": "Hard-level interview pattern focusing on Bit Manipulation, Array, and manipulation, bit manipulation, bit structures.",
     "top_tags": [
       "Bit Manipulation",
       "Array",
@@ -323,8 +345,10 @@
   },
   "11": {
     "cluster_id": 11,
-    "title": "Binary Search & Array Patterns",
+    "title": "Medium Binary Search & Array (Binary Search)",
     "size": 99,
+    "problem_count": 99,
+    "description": "Medium-level interview pattern focusing on Binary Search, Array, and binary search, array binary, binary structures.",
     "top_tags": [
       "Binary Search",
       "Array",
@@ -353,8 +377,10 @@
   },
   "12": {
     "cluster_id": 12,
-    "title": "Math & String Patterns",
+    "title": "Easy Math & String (Math)",
     "size": 108,
+    "problem_count": 108,
+    "description": "Easy-level interview pattern focusing on Math, String, and math, number, input output structures.",
     "top_tags": [
       "Math",
       "String",
@@ -382,8 +408,10 @@
   },
   "13": {
     "cluster_id": 13,
-    "title": "Array & Prefix Sum Patterns",
+    "title": "Medium Array & Prefix Sum (Nums)",
     "size": 132,
+    "problem_count": 132,
+    "description": "Medium-level interview pattern focusing on Array, Prefix Sum, and nums, sum, prefix sum structures.",
     "top_tags": [
       "Array",
       "Prefix Sum",
@@ -412,8 +440,10 @@
   },
   "14": {
     "cluster_id": 14,
-    "title": "Bit Manipulation & Linked List Patterns",
+    "title": "Medium Bit Manipulation & Linked List (Linked)",
     "size": 75,
+    "problem_count": 75,
+    "description": "Medium-level interview pattern focusing on Bit Manipulation, Linked List, and linked, linked list, head structures.",
     "top_tags": [
       "Bit Manipulation",
       "Linked List",
@@ -442,8 +472,10 @@
   },
   "15": {
     "cluster_id": 15,
-    "title": "String & Greedy Patterns",
+    "title": "Medium String & Greedy (String)",
     "size": 75,
+    "problem_count": 75,
+    "description": "Medium-level interview pattern focusing on String, Greedy, and string, pointers string, pointers structures.",
     "top_tags": [
       "String",
       "Greedy",
@@ -472,8 +504,10 @@
   },
   "16": {
     "cluster_id": 16,
-    "title": "String & Math Patterns",
+    "title": "Medium String & Math (String)",
     "size": 105,
+    "problem_count": 105,
+    "description": "Medium-level interview pattern focusing on String, Math, and string, math string, math structures.",
     "top_tags": [
       "String",
       "Math",
@@ -501,8 +535,10 @@
   },
   "17": {
     "cluster_id": 17,
-    "title": "Depth-First Search & Array Patterns",
+    "title": "Hard Depth-First Search & Array (Tree)",
     "size": 40,
+    "problem_count": 40,
+    "description": "Hard-level interview pattern focusing on Depth-First Search, Array, and tree, depth search, depth structures.",
     "top_tags": [
       "Depth-First Search",
       "Array",
@@ -530,8 +566,10 @@
   },
   "18": {
     "cluster_id": 18,
-    "title": "Array & Matrix Patterns",
+    "title": "Medium Array & Matrix (Matrix)",
     "size": 136,
+    "problem_count": 136,
+    "description": "Medium-level interview pattern focusing on Array, Matrix, and matrix, grid, cell structures.",
     "top_tags": [
       "Array",
       "Matrix",
@@ -560,8 +598,10 @@
   },
   "19": {
     "cluster_id": 19,
-    "title": "Array & Dynamic Programming Patterns",
+    "title": "Hard Array & Dynamic Programming (Nums)",
     "size": 107,
+    "problem_count": 107,
+    "description": "Hard-level interview pattern focusing on Array, Dynamic Programming, and nums, array, array dynamic structures.",
     "top_tags": [
       "Array",
       "Dynamic Programming",
@@ -588,8 +628,10 @@
   },
   "20": {
     "cluster_id": 20,
-    "title": "Hash Table & String Patterns",
+    "title": "Medium Hash Table & String (Table String)",
     "size": 147,
+    "problem_count": 147,
+    "description": "Medium-level interview pattern focusing on Hash Table, String, and table string, string, hash table structures.",
     "top_tags": [
       "Hash Table",
       "String",
@@ -618,8 +660,10 @@
   },
   "21": {
     "cluster_id": 21,
-    "title": "Array & Math Patterns",
+    "title": "Hard Array & Math (Array Math)",
     "size": 82,
+    "problem_count": 82,
+    "description": "Hard-level interview pattern focusing on Array, Math, and array math, math, geometry array structures.",
     "top_tags": [
       "Array",
       "Math",
@@ -648,8 +692,10 @@
   },
   "22": {
     "cluster_id": 22,
-    "title": "Math & Array Patterns",
+    "title": "Medium Math & Array (Math)",
     "size": 119,
+    "problem_count": 119,
+    "description": "Medium-level interview pattern focusing on Math, Array, and math, array math, nums structures.",
     "top_tags": [
       "Math",
       "Array",
@@ -677,8 +723,10 @@
   },
   "23": {
     "cluster_id": 23,
-    "title": "Math & Dynamic Programming Patterns",
+    "title": "Hard Math & Dynamic Programming (Math Dynamic)",
     "size": 72,
+    "problem_count": 72,
+    "description": "Hard-level interview pattern focusing on Math, Dynamic Programming, and math dynamic, math, dynamic structures.",
     "top_tags": [
       "Math",
       "Dynamic Programming",
@@ -707,8 +755,10 @@
   },
   "24": {
     "cluster_id": 24,
-    "title": "Tree & Binary Tree Patterns",
+    "title": "Medium Tree & Binary Tree (Tree)",
     "size": 66,
+    "problem_count": 66,
+    "description": "Medium-level interview pattern focusing on Tree, Binary Tree, and tree, binary tree, root structures.",
     "top_tags": [
       "Tree",
       "Binary Tree",
@@ -736,8 +786,10 @@
   },
   "25": {
     "cluster_id": 25,
-    "title": "Array & Simulation Patterns",
+    "title": "Medium Array & Simulation (Simulation)",
     "size": 99,
+    "problem_count": 99,
+    "description": "Medium-level interview pattern focusing on Array, Simulation, and simulation, array simulation, simulation array structures.",
     "top_tags": [
       "Array",
       "Simulation",
@@ -766,8 +818,10 @@
   },
   "26": {
     "cluster_id": 26,
-    "title": "String & Hash Function Patterns",
+    "title": "Hard String & Hash Function (Rolling Hash)",
     "size": 25,
+    "problem_count": 25,
+    "description": "Hard-level interview pattern focusing on String, Hash Function, and rolling hash, function rolling, rolling structures.",
     "top_tags": [
       "String",
       "Hash Function",
@@ -796,8 +850,10 @@
   },
   "27": {
     "cluster_id": 27,
-    "title": "Stack & Array Patterns",
+    "title": "Medium Stack & Array (Stack)",
     "size": 59,
+    "problem_count": 59,
+    "description": "Medium-level interview pattern focusing on Stack, Array, and stack, monotonic stack, monotonic structures.",
     "top_tags": [
       "Stack",
       "Array",
@@ -826,8 +882,10 @@
   },
   "28": {
     "cluster_id": 28,
-    "title": "Backtracking & Array Patterns",
+    "title": "Medium Backtracking & Array (Backtracking)",
     "size": 47,
+    "problem_count": 47,
+    "description": "Medium-level interview pattern focusing on Backtracking, Array, and backtracking, array backtracking, bit structures.",
     "top_tags": [
       "Backtracking",
       "Array",
@@ -856,8 +914,10 @@
   },
   "29": {
     "cluster_id": 29,
-    "title": "String & Dynamic Programming Patterns",
+    "title": "Medium String & Dynamic Programming (String Dynamic)",
     "size": 38,
+    "problem_count": 38,
+    "description": "Medium-level interview pattern focusing on String, Dynamic Programming, and string dynamic, string, dynamic structures.",
     "top_tags": [
       "String",
       "Dynamic Programming",

@@ -351,10 +351,12 @@ class ProblemClusterEngine:
         df["cluster_id"] = cluster_ids
         terms = np.array(feature_extractor.text_vectorizer.get_feature_names_out())
         
+        seen_titles = set()
         for c_id in range(self.n_clusters):
             c_members = df[df["cluster_id"] == c_id]
             size = len(c_members)
             
+            # 1. Extract Top Topic Tags
             all_tags = []
             for tags in c_members["topic_tags"]:
                 if isinstance(tags, (list, np.ndarray)):
@@ -365,23 +367,36 @@ class ProblemClusterEngine:
             tag_counts = pd.Series(all_tags).value_counts()
             top_tags = tag_counts.head(4).index.tolist() if not tag_counts.empty else ["Algorithms"]
             
+            # 2. Extract Top Distinctive TF-IDF Keywords from Cluster Centroid
             center = self.kmeans.cluster_centers_[c_id][:len(terms)]
             top_word_indices = center.argsort()[::-1][:5]
             top_words = [terms[i] for i in top_word_indices if i < len(terms)]
             
+            # 3. Determine Dominant Difficulty
+            diff_dist = c_members["difficulty"].value_counts().to_dict()
+            dominant_diff = max(diff_dist, key=diff_dist.get) if diff_dist else "Medium"
+
+            # 4. Generate Unique Disambiguated Title
             primary_tag = top_tags[0] if top_tags else "General"
-            sec_tag = top_tags[1] if len(top_tags) > 1 else (top_words[0].title() if top_words else "Patterns")
-            cluster_title = f"{primary_tag} & {sec_tag} Patterns"
+            sec_tag = top_tags[1] if len(top_tags) > 1 else "Patterns"
+            keyword_sub = top_words[0].title() if top_words else "Optimization"
+            
+            cluster_title = f"{dominant_diff} {primary_tag} & {sec_tag} ({keyword_sub})"
+            if cluster_title in seen_titles:
+                # If collision occurs, use second keyword or cluster ID disambiguation
+                keyword_alt = top_words[1].title() if len(top_words) > 1 else f"Type {c_id}"
+                cluster_title = f"{dominant_diff} {primary_tag} & {sec_tag} ({keyword_alt})"
+            seen_titles.add(cluster_title)
             
             self.cluster_labels[c_id] = cluster_title
-            
-            diff_dist = c_members["difficulty"].value_counts().to_dict()
             sample_titles = c_members["task_id"].head(5).tolist()
 
             self.cluster_summaries[c_id] = {
                 "cluster_id": c_id,
                 "title": cluster_title,
                 "size": size,
+                "problem_count": size,
+                "description": f"{dominant_diff}-level interview pattern focusing on {primary_tag}, {sec_tag}, and {', '.join(top_words[:3])} structures.",
                 "top_tags": top_tags,
                 "top_keywords": top_words,
                 "difficulty_distribution": diff_dist,

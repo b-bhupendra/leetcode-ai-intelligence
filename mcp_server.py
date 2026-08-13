@@ -221,37 +221,42 @@ def push_to_web_dashboard(
     target_problem_slug: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Reverse MCP Bridge: Broadcasts an action, live code review, adaptive recommendation,
-    or custom interview sheet directly to the active local web host (http://localhost:8000).
+    Reverse MCP Bridge: Broadcasts live solution, code review, or adaptive steps to Web UI at http://localhost:8000
     """
+    from datetime import datetime
     payload = {
         "title": title,
-        "action_type": action_type,  # 'code_review', 'adaptive_step', 'study_plan', 'alert'
+        "action_type": action_type,  # 'code_review', 'agent_solution_push', 'adaptive_step', 'alert'
         "content": markdown_content,
         "problem_slug": target_problem_slug or "",
-        "timestamp": json.dumps(None)
+        "timestamp": datetime.now().strftime("%H:%M:%S")
     }
 
-    try:
-        req = urllib.request.Request(
-            LOCAL_WEB_BROADCAST_URL,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
-        )
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return {
-                "status": "pushed_to_web",
-                "message": f"Successfully broadcasted '{title}' to local Web UI at http://localhost:8000",
-                "server_response": data
-            }
-    except Exception as e:
-        return {
-            "status": "broadcast_offline",
-            "message": f"Web host at {LOCAL_WEB_BROADCAST_URL} is not responding (ensure web_app.py is running).",
-            "error": str(e),
-            "payload_saved": payload
-        }
+    for target_url in [
+        "http://127.0.0.1:8000/api/agent/broadcast",
+        "http://localhost:8000/api/agent/broadcast"
+    ]:
+        try:
+            req = urllib.request.Request(
+                target_url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=2.0) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                return {
+                    "status": "pushed_to_web",
+                    "message": f"Successfully broadcasted '{title}' to Web UI!",
+                    "server_response": data
+                }
+        except Exception:
+            continue
+
+    return {
+        "status": "broadcast_offline",
+        "message": "Web app is offline. Ensure 'python web_app.py' is running on port 8000.",
+        "payload_saved": payload
+    }
 
 
 if __name__ == "__main__":
