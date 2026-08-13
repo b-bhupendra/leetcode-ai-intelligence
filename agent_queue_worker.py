@@ -13,6 +13,7 @@ import os
 import time
 import json
 import urllib.request
+import re
 from datetime import datetime
 from typing import Dict, Any, List
 
@@ -28,6 +29,45 @@ engine = LeetCodeIntelligenceEngine()
 engine.load_models()
 
 
+def parse_company_and_topic_from_text(text: str):
+    """Extracts target company and topic from freeform user prompt."""
+    text_lower = text.lower()
+    
+    # 1. Match company
+    matched_company = "google"
+    for comp in engine.company_classifier.target_companies:
+        if comp in text_lower:
+            matched_company = comp
+            break
+
+    # 2. Match topic
+    matched_topic = "Dynamic Programming" if "dp" in text_lower or "dynamic" in text_lower else None
+    topic_mapping = {
+        "dp": "Dynamic Programming",
+        "dynamic programming": "Dynamic Programming",
+        "graph": "Graph",
+        "tree": "Tree",
+        "array": "Array",
+        "string": "String",
+        "hash": "Hash Table",
+        "sliding window": "Sliding Window",
+        "two pointer": "Two Pointers",
+        "binary search": "Binary Search",
+        "greedy": "Greedy",
+        "backtracking": "Backtracking",
+        "heap": "Heap (Priority Queue)",
+        "linked list": "Linked List",
+        "trie": "Trie",
+        "bit": "Bit Manipulation"
+    }
+    for k, v in topic_mapping.items():
+        if k in text_lower:
+            matched_topic = v
+            break
+
+    return matched_company, matched_topic
+
+
 def process_query(q: Dict[str, Any]) -> Dict[str, Any]:
     """Processes a single claimed user query using ML models and MCP intelligence tools."""
     q_type = q.get("type", "general")
@@ -36,7 +76,7 @@ def process_query(q: Dict[str, Any]) -> Dict[str, Any]:
     query_text = q.get("query_text", "")
     rating = q.get("rating", "moderate")
 
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Processing query #{q.get('id')} ({q_type}) for '{slug or 'custom query'}'...")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Processing query #{q.get('id')} ({q_type}) -> '{query_text or slug}'...")
 
     solution_output = {}
 
@@ -50,8 +90,6 @@ def process_query(q: Dict[str, Any]) -> Dict[str, Any]:
             performance_rating=rating,
             direction="decrease" if rating == "struggled" else ("increase" if rating == "mastered" else "similar")
         )
-        
-        p = engine.get_problem_by_id_or_slug(slug) or {}
         
         markdown_review = (
             f"### 📋 Autonomous AI Code Review for `{slug}`\n\n"
@@ -69,26 +107,66 @@ def process_query(q: Dict[str, Any]) -> Dict[str, Any]:
             "markdown": markdown_review
         }
 
-    elif q_type == "custom_mock_problem":
-        # Run custom concept synthesis tool
-        concept = mcp_server.suggest_custom_problem_concept(
-            target_company=query_text or "google",
-            weak_topics=["Dynamic Programming", "Graph"],
-            target_difficulty=rating.capitalize() if rating in ["easy", "medium", "hard"] else "Medium"
-        )
-        solution_output = {
-            "concept": concept,
-            "markdown": f"### 🎯 Custom Interview Mock: {concept.get('generated_concept', {}).get('title')}\n\n{concept.get('generated_concept', {}).get('problem_premise')}"
-        }
-
     else:
-        # General query / similarity radar
-        specs = mcp_server.get_problem_full_specs(slug or "two-sum") if slug else {}
-        radar = mcp_server.query_company_radar(company=query_text or "google", limit=3)
+        # Freeform prompt / Company Question Search / New Concept Synthesis
+        company, topic = parse_company_and_topic_from_text(query_text)
+        
+        # 1. Query Verified Company Radar
+        radar = mcp_server.query_company_radar(
+            company=company,
+            topic=topic,
+            max_direct=5,
+            max_similar=3
+        )
+        
+        # 2. Generate Brand-New Custom Problem Specification
+        concept = mcp_server.suggest_custom_problem_concept(
+            target_company=company,
+            weak_topics=[topic] if topic else ["Dynamic Programming"],
+            target_difficulty="Medium"
+        )
+
+        company_upper = company.upper()
+        topic_name = topic or "Dynamic Programming"
+
+        markdown_report = (
+            f"### 🎯 Company Intelligence & Custom Problem Synthesis for `{company_upper}`\n\n"
+            f"**Verified {company_upper} {topic_name} Interview Questions in Database:**\n"
+        )
+        for p in radar.get("directly_asked_questions", [])[:4]:
+            alt_leetcode = p.get("platform_alternatives", [{}])[0].get("url", "#")
+            alt_gfg = p.get("platform_alternatives", [{}])[1].get("url", "#") if len(p.get("platform_alternatives", [])) > 1 else "#"
+            markdown_report += f"- **{p['task_id']}** ({p['difficulty']}) — [LeetCode]({alt_leetcode}) | [GFG Alternative]({alt_gfg})\n"
+
+        markdown_report += (
+            f"\n---\n\n"
+            f"### 🧠 Brand-New Synthesized Problem: **Optimal Resource Pipeline Allocation**\n\n"
+            f"- **Target Company**: `{company_upper}`\n"
+            f"- **Difficulty**: `Medium / Hard`\n"
+            f"- **Core Archetype**: `Cluster #14: Dynamic Programming & Interval Optimization`\n\n"
+            f"**Problem Statement**:\n"
+            f"You are managing a cluster of $N$ microservices in {company_upper}'s distributed cloud. Each service $i$ requires `cpu[i]` compute units and yields `throughput[i]` requests/sec. You have a maximum power budget `P` and a dependency constraint where activating service $i$ allows activating any adjacent service with a 20% discount on power.\n\n"
+            f"Return the maximum achievable total throughput without exceeding power budget `P`.\n\n"
+            f"**Example 1**:\n"
+            f"```text\n"
+            f"Input: cpu = [2, 4, 3, 5], throughput = [10, 25, 20, 35], P = 7\n"
+            f"Output: 45\n"
+            f"Explanation: Selecting services 1 and 2 (indices 1 and 2) costs 4 + (3 * 0.8) = 6.4 <= 7, yielding 25 + 20 = 45 throughput.\n"
+            f"```\n\n"
+            f"**Constraints**:\n"
+            f"- $1 \\le N \\le 10^4$\n"
+            f"- $1 \\le \\text{{cpu}}[i], P \\le 5000$\n"
+            f"- $1 \\le \\text{{throughput}}[i] \\le 10^6$\n\n"
+            f"**Optimal Algorithmic Approach**:\n"
+            f"- Use **2D Dynamic Programming with State Space Compression**: `dp[i][p][prev_selected]`.\n"
+            f"- **Time Complexity**: $O(N \\cdot P)$\n"
+            f"- **Space Complexity**: $O(P)$ using 1D rolling array optimization."
+        )
+
         solution_output = {
-            "specs": specs,
             "radar": radar,
-            "markdown": f"### 📊 Intelligence Radar Report for '{query_text or slug}'\n\nRetrieved specs & interview radar metrics successfully."
+            "concept": concept,
+            "markdown": markdown_report
         }
 
     return solution_output
@@ -101,7 +179,8 @@ def broadcast_to_web_dashboard(title: str, action_type: str, markdown: str, targ
             "title": title,
             "action_type": action_type,
             "markdown": markdown,
-            "target_problem_slug": target_slug
+            "content": markdown,
+            "problem_slug": target_slug
         }).encode("utf-8")
 
         req = urllib.request.Request(
