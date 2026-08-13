@@ -77,14 +77,15 @@ class PredictRequest(BaseModel):
     title: Optional[str] = ""
     description: str
     difficulty: Optional[str] = "Medium"
-    topic_tags: Optional[List[str]] = []
-    top_k: Optional[int] = 8
+ALL_DIFFICULTY_TIERS = ["Easy", "Easy-Medium", "Medium", "Medium-Hard", "Hard"]
 
 
 class FilterRequest(BaseModel):
     company: Optional[str] = None
     difficulty: Optional[str] = None
+    difficulty_tier: Optional[str] = None
     topic: Optional[str] = None
+    cluster_id: Optional[int] = None
     timeframe: Optional[str] = None
     search_query: Optional[str] = None
     max_direct: Optional[int] = 30
@@ -119,6 +120,7 @@ def get_metadata():
     return {
         "companies": ALL_COMPANIES,
         "difficulties": ALL_DIFFICULTIES,
+        "difficulty_tiers": ALL_DIFFICULTY_TIERS,
         "topics": ALL_TOPICS,
         "total_problems": len(engine.df),
         "clusters_count": len(engine.cluster_engine.cluster_summaries),
@@ -126,6 +128,15 @@ def get_metadata():
         "crawler_running": crawler_worker.is_running,
         "total_crawled": crawler_worker.total_ingested_count
     }
+
+
+@app.get("/api/cluster/{cluster_id}")
+def get_cluster_details(cluster_id: int):
+    """Returns granular 5-tier problem breakdown and archetype analysis for a cluster."""
+    summary = engine.cluster_engine.cluster_summaries.get(cluster_id)
+    if not summary:
+        return JSONResponse(content={"status": "not_found", "message": f"Cluster #{cluster_id} not found."}, status_code=404)
+    return JSONResponse(content={"status": "success", "data": summary})
 
 
 @app.post("/api/predict")
@@ -152,7 +163,9 @@ def filter_and_recommend(req: FilterRequest):
         results = engine.filter_and_recommend(
             company=req.company,
             difficulty=req.difficulty,
+            difficulty_tier=req.difficulty_tier,
             topic=req.topic,
+            cluster_id=req.cluster_id,
             timeframe=req.timeframe,
             search_query=req.search_query,
             max_direct=req.max_direct or 30,

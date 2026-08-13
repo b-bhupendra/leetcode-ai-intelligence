@@ -326,9 +326,41 @@ class CompanyClassifier:
         return results
 
 
+def compute_difficulty_tier(difficulty: str, topic_tags: Any, description: str = "") -> str:
+    """Classifies problems into 5 granular difficulty bands."""
+    diff = str(difficulty).strip().capitalize() if difficulty else "Medium"
+    
+    tags = []
+    if isinstance(topic_tags, (list, np.ndarray)):
+        tags = [str(t) for t in topic_tags]
+    elif isinstance(topic_tags, str) and topic_tags.strip():
+        tags = [t.strip() for t in topic_tags.split(";")]
+
+    hard_tags = {"Dynamic Programming", "Graph", "Segment Tree", "Binary Indexed Tree", "Trie", "Bitmask", "Suffix Array", "Eulerian Circuit"}
+    easy_tags = {"Array", "Math", "Hash Table", "String", "Simulation"}
+    desc_len = len(str(description))
+
+    if diff == "Easy":
+        if any(t in hard_tags for t in tags) or desc_len > 1100:
+            return "Easy-Medium"
+        return "Easy"
+    elif diff == "Medium":
+        if any(t in hard_tags for t in tags) or desc_len > 1500:
+            return "Medium-Hard"
+        elif all(t in easy_tags for t in tags) and desc_len < 650:
+            return "Easy-Medium"
+        return "Medium"
+    elif diff == "Hard":
+        if any(t in {"Math", "Greedy", "Array"} for t in tags) and not any(t in hard_tags for t in tags) and desc_len < 850:
+            return "Medium-Hard"
+        return "Hard"
+    return "Medium"
+
+
 class ProblemClusterEngine:
     """
-    Unsupervised problem clustering into algorithmic archetypes + NearestNeighbors similarity index.
+    Unsupervised problem clustering into algorithmic archetypes + NearestNeighbors similarity index
+    with 5-tier difficulty stratification (Easy, Easy-Medium, Medium, Medium-Hard, Hard).
     """
     def __init__(self, n_clusters: int = 30):
         self.n_clusters = n_clusters
@@ -344,11 +376,17 @@ class ProblemClusterEngine:
         self.is_fitted = False
 
     def fit(self, X: csr_matrix, df: pd.DataFrame, feature_extractor: LeetCodeFeatureExtractor):
-        print(f"Clustering {X.shape[0]} LeetCode problems into {self.n_clusters} algorithmic archetypes...")
+        print(f"Clustering {X.shape[0]} LeetCode problems into {self.n_clusters} algorithmic archetypes with 5-tier difficulty stratification...")
         cluster_ids = self.kmeans.fit_predict(X)
         self.nn_index.fit(X)
 
         df["cluster_id"] = cluster_ids
+        if "difficulty_tier" not in df.columns:
+            df["difficulty_tier"] = df.apply(
+                lambda row: compute_difficulty_tier(row.get("difficulty"), row.get("topic_tags"), row.get("problem_description", "")),
+                axis=1
+            )
+
         terms = np.array(feature_extractor.text_vectorizer.get_feature_names_out())
         
         seen_titles = set()
@@ -372,8 +410,16 @@ class ProblemClusterEngine:
             top_word_indices = center.argsort()[::-1][:5]
             top_words = [terms[i] for i in top_word_indices if i < len(terms)]
             
-            # 3. Determine Dominant Difficulty
+            # 3. Determine Dominant Difficulty & 5-Tier Breakdown
             diff_dist = c_members["difficulty"].value_counts().to_dict()
+            tier_dist = c_members["difficulty_tier"].value_counts().to_dict()
+            tier_breakdown = {
+                "Easy": int(tier_dist.get("Easy", 0)),
+                "Easy-Medium": int(tier_dist.get("Easy-Medium", 0)),
+                "Medium": int(tier_dist.get("Medium", 0)),
+                "Medium-Hard": int(tier_dist.get("Medium-Hard", 0)),
+                "Hard": int(tier_dist.get("Hard", 0))
+            }
             dominant_diff = max(diff_dist, key=diff_dist.get) if diff_dist else "Medium"
 
             # 4. Generate Unique Disambiguated Title
@@ -383,13 +429,31 @@ class ProblemClusterEngine:
             
             cluster_title = f"{dominant_diff} {primary_tag} & {sec_tag} ({keyword_sub})"
             if cluster_title in seen_titles:
-                # If collision occurs, use second keyword or cluster ID disambiguation
                 keyword_alt = top_words[1].title() if len(top_words) > 1 else f"Type {c_id}"
                 cluster_title = f"{dominant_diff} {primary_tag} & {sec_tag} ({keyword_alt})"
             seen_titles.add(cluster_title)
             
             self.cluster_labels[c_id] = cluster_title
-            sample_titles = c_members["task_id"].head(5).tolist()
+
+            # 5. Group Problems by 5 Difficulty Tiers for direct UI linking
+            problems_by_tier = {"Easy": [], "Easy-Medium": [], "Medium": [], "Medium-Hard": [], "Hard": []}
+            for _, prob in c_members.iterrows():
+                tier = prob.get("difficulty_tier", "Medium")
+                if tier not in problems_by_tier:
+                    tier = "Medium"
+                prob_tags = prob["topic_tags"] if isinstance(prob["topic_tags"], list) else []
+                prob_comps = prob["companies"] if isinstance(prob["companies"], list) else []
+                problems_by_tier[tier].append({
+                    "task_id": prob["task_id"],
+                    "question_id": int(prob["question_id"]) if pd.notna(prob.get("question_id")) else None,
+                    "title": prob.get("title") or prob["task_id"].replace("-", " ").title(),
+                    "difficulty": prob["difficulty"],
+                    "difficulty_tier": tier,
+                    "topic_tags": prob_tags[:3],
+                    "companies": prob_comps[:4],
+                    "companies_count": int(prob.get("companies_count", len(prob_comps))),
+                    "leetcode_url": f"https://leetcode.com/problems/{prob['task_id']}/"
+                })
 
             self.cluster_summaries[c_id] = {
                 "cluster_id": c_id,
@@ -400,7 +464,9 @@ class ProblemClusterEngine:
                 "top_tags": top_tags,
                 "top_keywords": top_words,
                 "difficulty_distribution": diff_dist,
-                "sample_problems": sample_titles
+                "tier_distribution": tier_breakdown,
+                "problems_by_tier": problems_by_tier,
+                "sample_problems": c_members["task_id"].head(6).tolist()
             }
 
         self.is_fitted = True
@@ -694,7 +760,9 @@ class LeetCodeIntelligenceEngine:
         self,
         company: Optional[str] = None,
         difficulty: Optional[str] = None,
+        difficulty_tier: Optional[str] = None,
         topic: Optional[str] = None,
+        cluster_id: Optional[int] = None,
         timeframe: Optional[str] = None,
         search_query: Optional[str] = None,
         max_direct: int = 30,
@@ -705,6 +773,7 @@ class LeetCodeIntelligenceEngine:
 
         comp_clean = company.strip().lower() if company else None
         diff_clean = difficulty.strip().capitalize() if difficulty else None
+        tier_clean = difficulty_tier.strip() if difficulty_tier else None
         topic_clean = topic.strip().lower() if topic else None
         tf_clean = timeframe.strip().lower() if timeframe else None
         q_clean = search_query.strip().lower() if search_query else None
@@ -728,6 +797,14 @@ class LeetCodeIntelligenceEngine:
 
         if diff_clean:
             direct_mask &= (self.df["difficulty"] == diff_clean)
+
+        if tier_clean:
+            if "difficulty_tier" in self.df.columns:
+                direct_mask &= (self.df["difficulty_tier"] == tier_clean)
+
+        if cluster_id is not None and cluster_id >= 0:
+            if "cluster_id" in self.df.columns:
+                direct_mask &= (self.df["cluster_id"] == int(cluster_id))
 
         if topic_clean:
             direct_mask &= self.df["topic_tags"].apply(
@@ -755,9 +832,11 @@ class LeetCodeIntelligenceEngine:
                 "question_id": int(row["question_id"]) if pd.notna(row["question_id"]) else None,
                 "task_id": task_id,
                 "difficulty": row["difficulty"],
+                "difficulty_tier": row.get("difficulty_tier", compute_difficulty_tier(row.get("difficulty"), row.get("topic_tags"))),
                 "topic_tags": row["topic_tags"] if isinstance(row["topic_tags"], list) else [],
                 "companies_count": int(row.get("companies_count", 0)),
                 "top_companies": row.get("top_companies", [])[:5] if isinstance(row.get("top_companies"), list) else [],
+                "cluster_id": int(row.get("cluster_id", 0)),
                 "cluster_title": row.get("cluster_title", "General"),
                 "frequency": round(float(row.get("query_company_frequency", 0.0)), 3) if comp_clean else None,
                 "leetcode_url": row.get("leetcode_url", ""),

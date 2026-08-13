@@ -67,6 +67,13 @@ export function App() {
     setIsDrawerOpen(true);
   };
 
+  const [filterClusterId, setFilterClusterId] = useState(null);
+
+  const handleFilterExplorerByCluster = (clusterId) => {
+    setFilterClusterId(clusterId);
+    setActiveTab('explorer');
+  };
+
   const navTabs = [
     { id: 'explorer', label: 'Problem Explorer', icon: Compass, badge: `${metadata.total_problems || 2870}` },
     { id: 'analyzer', label: 'Company Classifier', icon: Sparkles },
@@ -91,11 +98,11 @@ export function App() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm text-slate-100 tracking-tight">LeetCode AI Intelligence</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-800/50">
-                  Enterprise 2.0
+                  5-Tier Stratification
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
-                200 Companies • 2,870 Problems • ChromaDB & SQLite
+                200 Companies • 30 Archetypes (Easy to Hard) • ChromaDB & SQLite
               </span>
             </div>
           </div>
@@ -122,7 +129,10 @@ export function App() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (tab.id !== 'explorer') setFilterClusterId(null);
+                  setActiveTab(tab.id);
+                }}
                 className={`relative py-3 px-4 text-xs font-medium flex items-center gap-2 transition-colors whitespace-nowrap ${
                   isActive ? 'text-indigo-300 font-semibold' : 'text-slate-400 hover:text-slate-200'
                 }`}
@@ -167,6 +177,7 @@ export function App() {
               <ProblemExplorer
                 metadata={metadata}
                 onSelectProblem={handleSelectProblem}
+                initialClusterId={filterClusterId}
               />
             )}
 
@@ -190,7 +201,9 @@ export function App() {
             {activeTab === 'clusters' && (
               <ArchetypeClusters
                 metadata={metadata}
-                onSelectCluster={() => {}}
+                onSelectCluster={handleSelectProblem}
+                onInspectProblem={handleSelectProblem}
+                onFilterExplorerByCluster={handleFilterExplorerByCluster}
               />
             )}
           </motion.div>
