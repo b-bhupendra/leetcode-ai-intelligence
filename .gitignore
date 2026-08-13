@@ -22,6 +22,13 @@ models/*.joblib
 raw_company_data/
 raw_hf_data/
 
+# Local runtime databases & vector indices
+agent_queue.db
+agent_queue.db-journal
+chroma_db/
+*.db
+*.sqlite3
+
 # IDE & OS files
 .DS_Store
 Thumbs.db

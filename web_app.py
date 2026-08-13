@@ -50,11 +50,15 @@ AGENT_EVENTS: List[Dict[str, Any]] = [
     }
 ]
 EVENT_SUBSCRIBERS = set()
-QUEUE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "user_queries_queue.jsonl")
+import queue_manager
+from vector_store import LeetCodeVectorStore
+
+# Initialize persistent vector store
+vector_store = LeetCodeVectorStore()
 
 
 def log_user_query_to_file(query_type: str, query_text: str, problem_slug: str = "", code: str = "", rating: str = "moderate") -> Dict[str, Any]:
-    """Appends user queries to the persistent text/JSONL file."""
+    """Appends user queries to the persistent queue."""
     entry = {
         "id": int(time.time() * 1000),
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -65,8 +69,7 @@ def log_user_query_to_file(query_type: str, query_text: str, problem_slug: str =
         "rating": rating,
         "status": "pending"
     }
-    with open(QUEUE_FILE, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    queue_manager.enqueue_task(entry)
     return entry
 
 
@@ -277,33 +280,25 @@ class UserQueryRequest(BaseModel):
 
 @app.post("/api/agent/submit-query")
 def submit_query_endpoint(req: UserQueryRequest):
-    """Saves user query to persistent text file queue for 5-second agent processing."""
-    entry = log_user_query_to_file(
+    """Saves user query to transactional SQLite queue for 5-second agent processing."""
+    task_id = queue_manager.enqueue_task(
         query_type=req.query_type or "general",
-        query_text=req.query_text,
+        query_text=req.query_text or "",
         problem_slug=req.problem_slug or "",
         code=req.code or "",
         rating=req.rating or "moderate"
     )
     return JSONResponse(content={
         "status": "queued",
-        "message": f"Query #{entry['id']} saved to queue file ({QUEUE_FILE}). Agent scheduled to process in 5s.",
-        "entry": entry
+        "message": f"Query #{task_id} saved to transactional SQLite database. Agent scheduled to process in 5s.",
+        "task_id": task_id
     })
 
 
 @app.get("/api/agent/queue")
 def get_queued_queries():
-    """Returns all queries from the persistent queue file."""
-    if not os.path.exists(QUEUE_FILE):
-        return JSONResponse(content={"status": "success", "queries": []})
-    queries = []
-    with open(QUEUE_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                try: queries.append(json.loads(line))
-                except Exception: pass
+    """Returns recent queries from the transactional SQLite queue."""
+    queries = queue_manager.list_recent_queries(limit=50)
     return JSONResponse(content={"status": "success", "queries": queries})
 
 
@@ -312,8 +307,8 @@ def analyze_solution_endpoint(req: SolutionAnalysisRequest):
     """
     Web-to-Agent Trigger: Evaluates candidate solution and logs query to persistent file.
     """
-    # Log query to file
-    log_user_query_to_file(
+    # Log query to SQLite queue
+    queue_manager.enqueue_task(
         query_type="code_review",
         query_text=f"Code submission for {req.problem_slug}",
         problem_slug=req.problem_slug,

@@ -14,6 +14,8 @@ OUTPUT_DIGEST_FILE = os.path.join(ROOT_DIR, "AI_READABLE_CODEBASE.md")
 FILES_TO_INCLUDE = [
     "README.md",
     "requirements.txt",
+    "queue_manager.py",
+    "vector_store.py",
     "mcp_server.py",
     "web_app.py",
     "ml_models.py",
@@ -21,6 +23,7 @@ FILES_TO_INCLUDE = [
     "agent_queue_worker.py",
     "load_data.py",
     "merge_datasets.py",
+    "test_sqlite_queue_and_vector_store.py",
     "test_mcp_bridge.py",
     "test_query_queue_and_worker.py",
     "test_scraper_and_autoclassifier.py",

@@ -1,11 +1,11 @@
 """
-Autonomous Agent Queue Worker
+Autonomous Agent Queue Worker (Hardened SQLite Edition)
 
-Monitors 'user_queries_queue.jsonl' every 5 seconds:
-1. Reads pending user queries and code submissions from the web dashboard.
-2. Analyzes the problem using the LeetCode intelligence ML engine & MCP tools.
+Monitors the transactional SQLite queue every 5 seconds:
+1. Atomically claims pending user queries and code submissions from the web dashboard.
+2. Analyzes the problem using the LeetCode intelligence ML engine & FastMCP tools.
 3. Generates optimal time/space complexity analysis, edge-case traps, and adaptive follow-up steps.
-4. Marks the query as 'processed' in the text file.
+4. Marks the query as 'processed' in the SQLite database with full ACID compliance.
 5. Broadcasts the full solution & review back to the Web Dashboard (http://localhost:8000) in real-time!
 """
 
@@ -19,8 +19,8 @@ from typing import Dict, Any, List
 from ml_models import LeetCodeIntelligenceEngine
 from scraper_engine import CrossPlatformMapper
 import mcp_server
+import queue_manager
 
-QUEUE_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "user_queries_queue.jsonl")
 BROADCAST_URL = "http://127.0.0.1:8000/api/agent/broadcast"
 
 # Load intelligence engine
@@ -28,38 +28,8 @@ engine = LeetCodeIntelligenceEngine()
 engine.load_models()
 
 
-def read_all_queries() -> List[Dict[str, Any]]:
-    """Reads all queries from the persistent JSONL queue file."""
-    if not os.path.exists(QUEUE_FILE_PATH):
-        return []
-    
-    queries = []
-    with open(QUEUE_FILE_PATH, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                try:
-                    queries.append(json.loads(line))
-                except Exception:
-                    pass
-    return queries
-
-
-def write_all_queries(queries: List[Dict[str, Any]]) -> None:
-    """Overwrites the queue file with updated query statuses."""
-    with open(QUEUE_FILE_PATH, "w", encoding="utf-8") as f:
-        for q in queries:
-            f.write(json.dumps(q, ensure_ascii=False) + "\n")
-
-
-def append_query(query_data: Dict[str, Any]) -> None:
-    """Appends a new user query to the persistent file."""
-    with open(QUEUE_FILE_PATH, "a", encoding="utf-8") as f:
-        f.write(json.dumps(query_data, ensure_ascii=False) + "\n")
-
-
 def process_query(q: Dict[str, Any]) -> Dict[str, Any]:
-    """Processes a single pending user query using ML models and MCP intelligence tools."""
+    """Processes a single claimed user query using ML models and MCP intelligence tools."""
     q_type = q.get("type", "general")
     slug = q.get("problem_slug", "")
     code = q.get("code", "")
@@ -99,84 +69,98 @@ def process_query(q: Dict[str, Any]) -> Dict[str, Any]:
             "markdown": markdown_review
         }
 
-    elif q_type == "company_lookup" or "company" in q:
-        comp = q.get("company", "google")
-        radar = mcp_server.query_company_radar(comp, difficulty=q.get("difficulty"), topic=q.get("topic"))
-        markdown_review = (
-            f"### 🏢 Company Radar: `{comp.upper()}`\n\n"
-            f"- **Total Directly Asked in Bank**: {radar.get('total_direct_in_dataset', 0)}\n"
-            f"- **Top Novel Recommendations**: {', '.join([p['task_id'] for p in radar.get('similar_unasked_high_probability_questions', [])[:3]])}\n"
-        )
-        solution_output = {
-            "radar": radar,
-            "markdown": markdown_review
-        }
-
-    else:
-        # General query or custom concept synthesis
-        concept = mcp_server.suggest_custom_problem_concept("Google", ["Graph", "Sliding Window"], "Medium")
-        markdown_review = (
-            f"### 💡 AI Problem Synthesis\n\n"
-            f"Prompt: {query_text}\n\n"
-            f"**Recommended Action**: {concept.get('synthesis_prompt')}"
+    elif q_type == "custom_mock_problem":
+        # Run custom concept synthesis tool
+        concept = mcp_server.suggest_custom_problem_concept(
+            target_company=query_text or "google",
+            weak_topics=["Dynamic Programming", "Graph"],
+            target_difficulty=rating.capitalize() if rating in ["easy", "medium", "hard"] else "Medium"
         )
         solution_output = {
             "concept": concept,
-            "markdown": markdown_review
+            "markdown": f"### 🎯 Custom Interview Mock: {concept.get('generated_concept', {}).get('title')}\n\n{concept.get('generated_concept', {}).get('problem_premise')}"
         }
 
-    # Broadcast solution live to Web Dashboard
-    try:
-        payload = {
-            "title": f"AI Solution: {slug or 'User Query'}",
-            "action_type": "code_review" if code else "study_plan",
-            "content": solution_output.get("markdown", "Query processed successfully."),
-            "problem_slug": slug or ""
+    else:
+        # General query / similarity radar
+        specs = mcp_server.get_problem_full_specs(slug or "two-sum") if slug else {}
+        radar = mcp_server.query_company_radar(company=query_text or "google", limit=3)
+        solution_output = {
+            "specs": specs,
+            "radar": radar,
+            "markdown": f"### 📊 Intelligence Radar Report for '{query_text or slug}'\n\nRetrieved specs & interview radar metrics successfully."
         }
-        req = urllib.request.Request(
-            BROADCAST_URL,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
-        )
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] Broadcasted solution to Web Dashboard!")
-    except Exception as e:
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Web broadcast skipped (dashboard offline): {e}")
 
     return solution_output
 
 
-def run_worker_loop(poll_seconds: int = 5, max_iterations: int = None):
-    """Continuously polls user_queries_queue.jsonl every 5 seconds."""
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Starting 5-Second Agent Queue Worker...")
-    print(f"Monitoring: {QUEUE_FILE_PATH}")
-    
+def broadcast_to_web_dashboard(title: str, action_type: str, markdown: str, target_slug: str = ""):
+    """Broadcasts the solved result to the web dashboard via FastAPI SSE bridge."""
+    try:
+        payload = json.dumps({
+            "title": title,
+            "action_type": action_type,
+            "markdown": markdown,
+            "target_problem_slug": target_slug
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            BROADCAST_URL,
+            data=payload,
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            return resp.status == 200
+    except Exception as e:
+        print(f"[Worker] Web broadcast notice: Dashboard offline or not listening yet ({e})")
+        return False
+
+
+def run_agent_loop(interval_seconds: float = 5.0, max_iterations: int = None):
+    """Continuous agent loop polling the transactional SQLite queue."""
+    print(f"[START] Autonomous SQLite Worker started. Polling every {interval_seconds}s...")
     iterations = 0
+
     while True:
         try:
-            queries = read_all_queries()
-            updated = False
+            # Atomically claim the oldest pending task
+            task = queue_manager.claim_next_pending_task()
             
-            for q in queries:
-                if q.get("status") == "pending":
-                    solution = process_query(q)
-                    q["status"] = "processed"
-                    q["processed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    q["solution"] = solution
-                    updated = True
+            if task:
+                task_id = task["id"]
+                try:
+                    # Process task
+                    solution = process_query(task)
+                    
+                    # Mark complete in SQLite
+                    queue_manager.mark_task_completed(task_id, solution)
+                    
+                    # Broadcast live to Web Dashboard
+                    broadcast_to_web_dashboard(
+                        title=f"Autonomous AI Solution for #{task_id} ({task.get('problem_slug') or 'Custom Query'})",
+                        action_type="agent_solution_push",
+                        markdown=solution.get("markdown", "Solution processed successfully."),
+                        target_slug=task.get("problem_slug", "")
+                    )
+                    print(f" [OK] Query #{task_id} completed and broadcasted.")
+                except Exception as ex:
+                    print(f" [ERROR] Error processing query #{task_id}: {ex}")
+                    queue_manager.mark_task_failed(task_id, str(ex))
+            else:
+                # No pending tasks, wait for next tick
+                time.sleep(interval_seconds)
 
-            if updated:
-                write_all_queries(queries)
+            iterations += 1
+            if max_iterations and iterations >= max_iterations:
+                break
 
-        except Exception as e:
-            print(f"Error in worker loop: {e}")
-
-        iterations += 1
-        if max_iterations and iterations >= max_iterations:
+        except KeyboardInterrupt:
+            print("[AgentWorker] Stopping worker gracefully...")
             break
-
-        time.sleep(poll_seconds)
+        except Exception as e:
+            print(f"[AgentWorker] Queue loop error: {e}")
+            time.sleep(interval_seconds)
 
 
 if __name__ == "__main__":
-    run_worker_loop(poll_seconds=5)
+    run_agent_loop(interval_seconds=5.0)
