@@ -128,6 +128,14 @@ class BeamSearchCurriculumCompiler:
         compiled_steps = []
         for i, p in enumerate(best_path):
             trans = best_transitions[i-1] if i > 0 else None
+            trans_dict = None
+            if trans:
+                trans_dict = trans.model_dump()
+                # Flatten learner-friendly keys to top level of transition_delta
+                trans_dict['retained_concepts'] = trans.retained_concepts
+                trans_dict['new_concepts'] = trans.introduced_concepts
+                trans_dict['mechanism_change_summary'] = trans.mechanism_change
+
             compiled_steps.append({
                 "sequence_step": i + 1,
                 "problem_id": p.problem_id,
@@ -137,7 +145,7 @@ class BeamSearchCurriculumCompiler:
                 "introduced_concepts": p.introduced_concepts,
                 "prerequisite_concepts": p.prerequisite_concepts,
                 "operations": [op.value for op in p.operations],
-                "transition_delta": trans.model_dump() if trans else None,
+                "transition_delta": trans_dict,
                 "pedagogical_reason": trans.pedagogical_rationale if trans else "Initial baseline problem"
             })
 
