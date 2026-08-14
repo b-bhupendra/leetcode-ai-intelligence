@@ -1273,8 +1273,10 @@ class LeetCodeIntelligenceEngine:
         cluster_id: Optional[int] = None,
         timeframe: Optional[str] = None,
         search_query: Optional[str] = None,
-        max_direct: int = 30,
-        max_similar: int = 20
+        max_direct: int = 200,
+        max_similar: int = 20,
+        page: int = 1,
+        page_size: int = 50
     ) -> Dict[str, Any]:
         if not self.is_ready:
             raise ValueError("Engine is not initialized.")
@@ -1333,8 +1335,13 @@ class LeetCodeIntelligenceEngine:
             direct_df["query_company_frequency"] = direct_df.apply(get_freq, axis=1)
             direct_df = direct_df.sort_values(by="query_company_frequency", ascending=False)
 
+        total_count = len(direct_df)
+        # Paginate: return the requested page slice
+        offset = (page - 1) * page_size
+        paged_df = direct_df.iloc[offset: offset + page_size]
+
         direct_results = []
-        for _, row in direct_df.head(max_direct).iterrows():
+        for _, row in paged_df.iterrows():
             task_id = str(row["task_id"])
             direct_results.append({
                 "question_id": int(row["question_id"]) if pd.notna(row["question_id"]) else None,
@@ -1408,7 +1415,11 @@ class LeetCodeIntelligenceEngine:
                 "timeframe": tf_clean,
                 "search_query": q_clean
             },
-            "direct_count": len(direct_df),
+            "total_count": total_count,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": max(1, -(-total_count // page_size)),  # ceiling division
+            "direct_count": len(direct_results),
             "direct_problems": direct_results,
             "similar_unasked_count": len(similar_unasked_results),
             "similar_unasked_problems": similar_unasked_results

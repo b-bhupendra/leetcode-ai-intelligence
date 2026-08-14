@@ -36,6 +36,10 @@ export function ProblemExplorer({ metadata, onSelectProblem, initialClusterId = 
   const [loading, setLoading] = useState(false);
   const [directProblems, setDirectProblems] = useState([]);
   const [similarProblems, setSimilarProblems] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const PAGE_SIZE = 50;
 
   useEffect(() => {
     if (initialClusterId !== null) {
@@ -43,7 +47,7 @@ export function ProblemExplorer({ metadata, onSelectProblem, initialClusterId = 
     }
   }, [initialClusterId]);
 
-  const fetchProblems = async () => {
+  const fetchProblems = async (pageNum = 1) => {
     setLoading(true);
     try {
       const res = await fetch('/api/problems/filter', {
@@ -57,7 +61,8 @@ export function ProblemExplorer({ metadata, onSelectProblem, initialClusterId = 
           cluster_id: selectedClusterId !== '' ? parseInt(selectedClusterId) : null,
           timeframe,
           search_query: searchQuery || null,
-          max_direct: 36,
+          page: pageNum,
+          page_size: PAGE_SIZE,
           max_similar: 12
         })
       });
@@ -65,6 +70,9 @@ export function ProblemExplorer({ metadata, onSelectProblem, initialClusterId = 
       if (data.status === 'success') {
         setDirectProblems(data.data.direct_problems || []);
         setSimilarProblems(data.data.similar_unasked_problems || []);
+        setTotalCount(data.data.total_count ?? data.data.direct_count ?? 0);
+        setTotalPages(data.data.total_pages ?? 1);
+        setPage(pageNum);
       }
     } catch (err) {
       console.error('Failed to fetch problems:', err);
@@ -74,12 +82,12 @@ export function ProblemExplorer({ metadata, onSelectProblem, initialClusterId = 
   };
 
   useEffect(() => {
-    fetchProblems();
+    fetchProblems(1);
   }, [selectedCompany, selectedDifficulty, selectedTier, selectedTopic, selectedClusterId, timeframe]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchProblems();
+    fetchProblems(1);
   };
 
   const handleResetFilters = () => {
@@ -91,6 +99,7 @@ export function ProblemExplorer({ metadata, onSelectProblem, initialClusterId = 
     setSelectedClusterId('');
     setTimeframe('alltime');
   };
+
 
   return (
     <div className="space-y-6">
@@ -204,8 +213,13 @@ export function ProblemExplorer({ metadata, onSelectProblem, initialClusterId = 
               {selectedCompany ? `${selectedCompany.toUpperCase()} Radar Questions` : 'Verified Problems'}
             </h2>
             <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-indigo-950 text-indigo-300 border border-indigo-800">
-              {directProblems.length} Found
+              {totalCount > 0 ? `${totalCount} total` : `${directProblems.length} found`}
             </span>
+            {totalPages > 1 && (
+              <span className="text-[10px] font-mono text-slate-500">
+                Page {page} of {totalPages}
+              </span>
+            )}
           </div>
         </div>
 
@@ -235,28 +249,26 @@ export function ProblemExplorer({ metadata, onSelectProblem, initialClusterId = 
           </div>
         )}
 
-        {/* Similar High-Probability Unasked Questions Section */}
-        {similarProblems.length > 0 && (
-          <div className="space-y-4 pt-6">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
-                Similar High-Probability Questions ({selectedCompany ? selectedCompany.toUpperCase() : 'General'})
-              </h3>
-            </div>
-
-            <motion.div
-              variants={gridContainerVariants}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        {/* Pagination controls */}
+        {totalPages > 1 && !loading && (
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => fetchProblems(page - 1)}
+              disabled={page <= 1}
+              className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-xs font-medium hover:border-slate-600 hover:text-slate-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              {similarProblems.map((problem) => (
-                <motion.div key={problem.task_id} variants={cardItemVariants}>
-                  <ProblemCard problem={problem} onSelect={onSelectProblem} />
-                </motion.div>
-              ))}
-            </motion.div>
+              ← Previous
+            </button>
+            <span className="text-xs font-mono text-slate-500">
+              {page} / {totalPages} · {totalCount} problems
+            </span>
+            <button
+              onClick={() => fetchProblems(page + 1)}
+              disabled={page >= totalPages}
+              className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-xs font-medium hover:border-slate-600 hover:text-slate-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Next →
+            </button>
           </div>
         )}
       </div>

@@ -100,6 +100,8 @@ class FilterRequest(BaseModel):
     search_query: Optional[str] = None
     max_direct: Optional[int] = 30
     max_similar: Optional[int] = 20
+    page: Optional[int] = 1        # 1-indexed page for direct results
+    page_size: Optional[int] = 50  # problems per page (max 200)
 
 
 class ScrapeRequest(BaseModel):
@@ -355,6 +357,12 @@ def predict_patterns(req: PatternPredictRequest):
 def filter_and_recommend(req: FilterRequest):
     """Filters problems and finds high-probability similar unasked questions."""
     try:
+        # When browsing an archetype with no other filters, allow large page_size
+        # so the full cluster can be surfaced (e.g. Two Pointers = 855 problems)
+        page_size = min(req.page_size or 50, 200)
+        page = max(req.page or 1, 1)
+        max_direct = page_size * page  # fetch enough rows to slice the right page
+
         results = engine.filter_and_recommend(
             company=req.company,
             difficulty=req.difficulty,
@@ -363,8 +371,10 @@ def filter_and_recommend(req: FilterRequest):
             cluster_id=req.cluster_id,
             timeframe=req.timeframe,
             search_query=req.search_query,
-            max_direct=req.max_direct or 30,
-            max_similar=req.max_similar or 20
+            max_direct=max_direct,
+            max_similar=req.max_similar or 20,
+            page=page,
+            page_size=page_size
         )
         return JSONResponse(content={"status": "success", "data": results})
     except Exception as e:
@@ -644,4 +654,4 @@ _start_queue_worker_background()
 if __name__ == "__main__":
     import uvicorn
     print("Starting LeetCode Intelligence Dashboard at http://localhost:8000 ...")
-    uvicorn.run("web_app:app", host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
