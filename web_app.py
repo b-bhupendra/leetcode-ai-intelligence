@@ -110,6 +110,30 @@ class CrawlerToggleRequest(BaseModel):
     enable: bool
 
 
+class CurriculumCompileRequest(BaseModel):
+    start_problem_id: str = "meeting-rooms"
+    target_length: Optional[int] = 8
+    beam_width: Optional[int] = 10
+    solved_problems: Optional[List[str]] = None
+    mastered_concepts: Optional[List[str]] = None
+
+
+class CurriculumBridgeRequest(BaseModel):
+    source_id: str
+    target_id: str
+    solved_problems: Optional[List[str]] = None
+    mastered_concepts: Optional[List[str]] = None
+    cognitive_jump_threshold: Optional[int] = 2
+
+
+class CurriculumAdaptiveStepRequest(BaseModel):
+    current_problem_id: str
+    next_problem_id: str
+    user_id: Optional[str] = "default_user"
+    last_problem_success: Optional[bool] = True
+    hints_used: Optional[int] = 0
+
+
 class BroadcastPayload(BaseModel):
     title: str
     action_type: str  # 'code_review', 'adaptive_step', 'study_plan', 'alert', 'status'
@@ -211,6 +235,86 @@ def get_neetcode_track_problems(track_id: str, list_type: Optional[str] = "all")
             "list_type": list_type,
             "problem_count": len(problems),
             "problems": problems
+        })
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+
+# ==============================================================================
+# Pedagogy-Driven Curriculum Compiler V2 Endpoints
+# ==============================================================================
+
+@app.post("/api/curriculum/compile")
+def compile_curriculum_path(req: CurriculumCompileRequest):
+    """
+    Compiles a pedagogically optimized curriculum path using Constrained Beam Search (K=10).
+    Maximizes concept continuity, retention, coverage and minimizes cognitive jumps.
+    """
+    try:
+        from curriculum_gold_standard import get_gold_standard_graph
+        from curriculum_beam_search_compiler import BeamSearchCurriculumCompiler
+        from curriculum_schema_v2 import LearnerState
+
+        kg = get_gold_standard_graph()
+        compiler = BeamSearchCurriculumCompiler(kg, beam_width=req.beam_width or 10)
+
+        learner = None
+        if req.solved_problems or req.mastered_concepts:
+            learner = LearnerState(
+                solved_problems=set(req.solved_problems or []),
+                mastered_concepts=set(req.mastered_concepts or [])
+            )
+
+        result = compiler.compile_curriculum(
+            start_problem_id=req.start_problem_id,
+            target_length=req.target_length or 8,
+            learner_state=learner
+        )
+        return JSONResponse(content=result)
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+
+@app.post("/api/curriculum/bridge")
+def generate_curriculum_bridge(req: CurriculumBridgeRequest):
+    """
+    Dynamically generates intermediate bridge problem between source and target
+    when cognitive jumps exceed capacity or prerequisites are unfulfilled.
+    """
+    try:
+        from curriculum_gold_standard import get_gold_standard_graph
+        from curriculum_learner_engine import BridgeGenerator
+        from curriculum_schema_v2 import LearnerState
+
+        kg = get_gold_standard_graph()
+        bridge_gen = BridgeGenerator(kg)
+
+        learner = LearnerState(
+            solved_problems=set(req.solved_problems or []),
+            mastered_concepts=set(req.mastered_concepts or [])
+        )
+
+        result = bridge_gen.evaluate_and_bridge(
+            source_id=req.source_id,
+            target_id=req.target_id,
+            learner_state=learner,
+            cognitive_jump_threshold=req.cognitive_jump_threshold or 2
+        )
+        return JSONResponse(content={"status": "success", "data": result})
+    except Exception as e:
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
+
+
+@app.get("/api/curriculum/gold-standard")
+def get_gold_standard_curriculum():
+    """Returns the complete Archetype 15 Gold Standard signatures and metadata."""
+    try:
+        from curriculum_gold_standard import GOLD_STANDARD_SIGNATURES
+        return JSONResponse(content={
+            "status": "success",
+            "archetype": "Archetype 15: Greedy & Interval Scheduling",
+            "total_signatures": len(GOLD_STANDARD_SIGNATURES),
+            "signatures": [sig.model_dump() for sig in GOLD_STANDARD_SIGNATURES]
         })
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)

@@ -259,6 +259,77 @@ def push_to_web_dashboard(
     }
 
 
+# ==============================================================================
+# Pedagogy-Driven Curriculum Compiler V2 MCP Tools
+# ==============================================================================
+
+@mcp.tool()
+def compile_curriculum_path(
+    start_problem_id: str = "meeting-rooms",
+    target_length: int = 8,
+    beam_width: int = 10,
+    solved_problems: Optional[List[str]] = None,
+    mastered_concepts: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """
+    Pedagogy-Driven Curriculum Compiler V2:
+    Compiles an optimal multi-step learning path from start_problem_id using Constrained Beam Search (K=10).
+    Optimizes concept continuity, knowledge retention, and minimizes cognitive jumps.
+    """
+    from curriculum_gold_standard import get_gold_standard_graph
+    from curriculum_beam_search_compiler import BeamSearchCurriculumCompiler
+    from curriculum_schema_v2 import LearnerState
+
+    kg = get_gold_standard_graph()
+    compiler = BeamSearchCurriculumCompiler(kg, beam_width=beam_width)
+
+    learner = None
+    if solved_problems or mastered_concepts:
+        learner = LearnerState(
+            solved_problems=set(solved_problems or []),
+            mastered_concepts=set(mastered_concepts or [])
+        )
+
+    return compiler.compile_curriculum(
+        start_problem_id=start_problem_id,
+        target_length=target_length,
+        learner_state=learner
+    )
+
+
+@mcp.tool()
+def insert_curriculum_bridge(
+    source_problem_id: str,
+    target_problem_id: str,
+    solved_problems: Optional[List[str]] = None,
+    mastered_concepts: Optional[List[str]] = None,
+    cognitive_jump_threshold: int = 2
+) -> Dict[str, Any]:
+    """
+    Dynamically generates intermediate bridge problem between source and target
+    when a cognitive jump exceeds capacity or prerequisites are unfulfilled.
+    """
+    from curriculum_gold_standard import get_gold_standard_graph
+    from curriculum_learner_engine import BridgeGenerator
+    from curriculum_schema_v2 import LearnerState
+
+    kg = get_gold_standard_graph()
+    bridge_gen = BridgeGenerator(kg)
+
+    learner = LearnerState(
+        solved_problems=set(solved_problems or []),
+        mastered_concepts=set(mastered_concepts or [])
+    )
+
+    return bridge_gen.evaluate_and_bridge(
+        source_id=source_problem_id,
+        target_id=target_problem_id,
+        learner_state=learner,
+        cognitive_jump_threshold=cognitive_jump_threshold
+    )
+
+
 if __name__ == "__main__":
     print("Starting LeetCode DSA Intelligence MCP Server over stdio...")
     mcp.run(transport="stdio")
+

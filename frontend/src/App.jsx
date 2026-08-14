@@ -20,8 +20,9 @@ import { LiveCopilotStream } from './components/LiveCopilotStream';
 import { CrawlerConsole } from './components/CrawlerConsole';
 import { ArchetypeClusters } from './components/ArchetypeClusters';
 import { NeetCodeVisualRoadmap } from './components/NeetCodeVisualRoadmap';
+import { CurriculumStudio } from './components/CurriculumStudio';
 import { ProblemInspectorDrawer } from './components/ProblemInspectorDrawer';
-import { Map } from 'lucide-react';
+import { Map, GraduationCap } from 'lucide-react';
 
 const tabContentVariants = {
   initial: { opacity: 0, y: 10 },
@@ -38,7 +39,7 @@ const tabContentVariants = {
 };
 
 export function App() {
-  const [activeTab, setActiveTab] = useState('roadmap');
+  const [activeTab, setActiveTab] = useState('curriculum');
   const [metadata, setMetadata] = useState({
     companies: [],
     difficulties: ['Easy', 'Medium', 'Hard'],
@@ -77,6 +78,7 @@ export function App() {
   };
 
   const navTabs = [
+    { id: 'curriculum', label: 'Curriculum Compiler', icon: GraduationCap, badge: 'V2 Beam K=10' },
     { id: 'roadmap', label: 'NeetCode Visual Roadmap', icon: Map, badge: '75 / 150 / 250' },
     { id: 'explorer', label: 'Problem Explorer', icon: Compass, badge: `${metadata.total_problems || 2870}` },
     { id: 'analyzer', label: 'Company Classifier', icon: Sparkles },
@@ -101,11 +103,11 @@ export function App() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm text-slate-100 tracking-tight">LeetCode AI Intelligence</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-indigo-950 text-indigo-300 border border-indigo-800/50">
-                  15 Unified Archetypes
+                  Pedagogy Compiler V2
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
-                4 Core Paradigms • 15 Algorithmic Archetypes • 6-Phase Mastery Roadmap
+                Concept Graph • Constrained Beam Search • Dynamic Bridge Insertion
               </span>
             </div>
           </div>
@@ -176,6 +178,12 @@ export function App() {
             animate="animate"
             exit="exit"
           >
+            {activeTab === 'curriculum' && (
+              <CurriculumStudio
+                onSelectProblem={handleSelectProblem}
+              />
+            )}
+
             {activeTab === 'roadmap' && (
               <NeetCodeVisualRoadmap
                 onSelectProblem={handleSelectProblem}
